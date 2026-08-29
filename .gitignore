@@ -1,0 +1,59 @@
+# ============================================================
+# VCS / Synopsys Simulation Build Artifacts
+# ============================================================
+
+# Compiled simulation binary and its support directory
+run/simv
+run/simv.daidir/
+
+# VCS compile output
+run/csrc/
+*.o
+*.so
+*.a
+
+# ============================================================
+# Waveform / Dump Files
+# ============================================================
+*.vcd
+*.fsdb
+*.vpd
+*.shm/
+
+# ============================================================
+# Verdi / Novas Log and Session Files
+# ============================================================
+run/verdiLog/
+run/novas.conf
+run/novas.rc
+run/novas_dump.log
+run/verdi_config_file
+run/ucli.key
+novas.conf
+novas.rc
+
+# ============================================================
+# Simulation Logs and Compile Logs
+# ============================================================
+run/compile.log
+run/run.f
+*.log
+ucli.key
+
+# ============================================================
+# Python Bytecode
+# ============================================================
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ============================================================
+# Editor / OS Artifacts
+# ============================================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
