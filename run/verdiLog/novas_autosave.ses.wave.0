@@ -1,0 +1,510 @@
+Magic 271485
+Revision Verdi_U-2023.03-SP1
+
+; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
+viewPort 0 25 1257 256 100 65
+
+; File list:
+; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
+openDirFile -d / "" "/home/student/Documents/harsha-189/run/dump.fsdb"
+
+; file time scale:
+; fileTimeScale ### s|ms|us|ns|ps
+
+; signal spacing:
+signalSpacing 5
+
+; windowTimeUnit is used for zoom, cursor & marker
+; waveform viewport range
+zoom 0.000000 329353.337931
+cursor 0.000000
+marker 0.000000
+
+; user define markers
+; userMarker time_pos marker_name color linestyle
+; visible top row signal index
+top 434
+; marker line index
+markerPos 0
+
+; event list
+; addEvent event_name event_expression
+; curEvent event_name
+
+
+
+COMPLEX_EVENT_BEGIN
+
+
+COMPLEX_EVENT_END
+
+
+
+; toolbar current search type
+; curSTATUS search_type
+curSTATUS ByChange
+
+
+addGroup "G1"
+activeDirFile "" "/home/student/Documents/harsha-189/run/dump.fsdb"
+addSignal -h 15 /axi_interconnect_tb/clk
+addSignal -h 15 -holdScope rst
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awburst[1:0]
+addSignal -h 15 -holdScope s00_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_awqos[3:0]
+addSignal -h 15 -holdScope s00_axi_awuser[0:0]
+addSignal -h 15 -holdScope s00_axi_awvalid
+addSignal -h 15 -holdScope s00_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_wstrb[3:0]
+addSignal -h 15 -holdScope s00_axi_wlast
+addSignal -h 15 -holdScope s00_axi_wuser[0:0]
+addSignal -h 15 -holdScope s00_axi_wvalid
+addSignal -h 15 -holdScope s00_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_bresp[1:0]
+addSignal -h 15 -holdScope s00_axi_buser[0:0]
+addSignal -h 15 -holdScope s00_axi_bvalid
+addSignal -h 15 -holdScope s00_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arburst[1:0]
+addSignal -h 15 -holdScope s00_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_arqos[3:0]
+addSignal -h 15 -holdScope s00_axi_aruser[0:0]
+addSignal -h 15 -holdScope s00_axi_arvalid
+addSignal -h 15 -holdScope s00_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s00_axi_rresp[1:0]
+addSignal -h 15 -holdScope s00_axi_rlast
+addSignal -h 15 -holdScope s00_axi_ruser[0:0]
+addSignal -h 15 -holdScope s00_axi_rvalid
+addSignal -h 15 -holdScope s00_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awburst[1:0]
+addSignal -h 15 -holdScope s01_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_awqos[3:0]
+addSignal -h 15 -holdScope s01_axi_awuser[0:0]
+addSignal -h 15 -holdScope s01_axi_awvalid
+addSignal -h 15 -holdScope s01_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_wstrb[3:0]
+addSignal -h 15 -holdScope s01_axi_wlast
+addSignal -h 15 -holdScope s01_axi_wuser[0:0]
+addSignal -h 15 -holdScope s01_axi_wvalid
+addSignal -h 15 -holdScope s01_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_bresp[1:0]
+addSignal -h 15 -holdScope s01_axi_buser[0:0]
+addSignal -h 15 -holdScope s01_axi_bvalid
+addSignal -h 15 -holdScope s01_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arburst[1:0]
+addSignal -h 15 -holdScope s01_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_arqos[3:0]
+addSignal -h 15 -holdScope s01_axi_aruser[0:0]
+addSignal -h 15 -holdScope s01_axi_arvalid
+addSignal -h 15 -holdScope s01_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope s01_axi_rresp[1:0]
+addSignal -h 15 -holdScope s01_axi_rlast
+addSignal -h 15 -holdScope s01_axi_ruser[0:0]
+addSignal -h 15 -holdScope s01_axi_rvalid
+addSignal -h 15 -holdScope s01_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awburst[1:0]
+addSignal -h 15 -holdScope m00_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_awregion[3:0]
+addSignal -h 15 -holdScope m00_axi_awuser[0:0]
+addSignal -h 15 -holdScope m00_axi_awvalid
+addSignal -h 15 -holdScope m00_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m00_axi_wlast
+addSignal -h 15 -holdScope m00_axi_wuser[0:0]
+addSignal -h 15 -holdScope m00_axi_wvalid
+addSignal -h 15 -holdScope m00_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_bresp[1:0]
+addSignal -h 15 -holdScope m00_axi_buser[0:0]
+addSignal -h 15 -holdScope m00_axi_bvalid
+addSignal -h 15 -holdScope m00_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arburst[1:0]
+addSignal -h 15 -holdScope m00_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_arregion[3:0]
+addSignal -h 15 -holdScope m00_axi_aruser[0:0]
+addSignal -h 15 -holdScope m00_axi_arvalid
+addSignal -h 15 -holdScope m00_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_axi_rresp[1:0]
+addSignal -h 15 -holdScope m00_axi_rlast
+addSignal -h 15 -holdScope m00_axi_ruser[0:0]
+addSignal -h 15 -holdScope m00_axi_rvalid
+addSignal -h 15 -holdScope m00_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awburst[1:0]
+addSignal -h 15 -holdScope m01_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_awregion[3:0]
+addSignal -h 15 -holdScope m01_axi_awuser[0:0]
+addSignal -h 15 -holdScope m01_axi_awvalid
+addSignal -h 15 -holdScope m01_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m01_axi_wlast
+addSignal -h 15 -holdScope m01_axi_wuser[0:0]
+addSignal -h 15 -holdScope m01_axi_wvalid
+addSignal -h 15 -holdScope m01_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_bresp[1:0]
+addSignal -h 15 -holdScope m01_axi_buser[0:0]
+addSignal -h 15 -holdScope m01_axi_bvalid
+addSignal -h 15 -holdScope m01_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arburst[1:0]
+addSignal -h 15 -holdScope m01_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_arregion[3:0]
+addSignal -h 15 -holdScope m01_axi_aruser[0:0]
+addSignal -h 15 -holdScope m01_axi_arvalid
+addSignal -h 15 -holdScope m01_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_axi_rresp[1:0]
+addSignal -h 15 -holdScope m01_axi_rlast
+addSignal -h 15 -holdScope m01_axi_ruser[0:0]
+addSignal -h 15 -holdScope m01_axi_rvalid
+addSignal -h 15 -holdScope m01_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awburst[1:0]
+addSignal -h 15 -holdScope m02_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_awregion[3:0]
+addSignal -h 15 -holdScope m02_axi_awuser[0:0]
+addSignal -h 15 -holdScope m02_axi_awvalid
+addSignal -h 15 -holdScope m02_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m02_axi_wlast
+addSignal -h 15 -holdScope m02_axi_wuser[0:0]
+addSignal -h 15 -holdScope m02_axi_wvalid
+addSignal -h 15 -holdScope m02_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_bresp[1:0]
+addSignal -h 15 -holdScope m02_axi_buser[0:0]
+addSignal -h 15 -holdScope m02_axi_bvalid
+addSignal -h 15 -holdScope m02_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arburst[1:0]
+addSignal -h 15 -holdScope m02_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_arregion[3:0]
+addSignal -h 15 -holdScope m02_axi_aruser[0:0]
+addSignal -h 15 -holdScope m02_axi_arvalid
+addSignal -h 15 -holdScope m02_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_axi_rresp[1:0]
+addSignal -h 15 -holdScope m02_axi_rlast
+addSignal -h 15 -holdScope m02_axi_ruser[0:0]
+addSignal -h 15 -holdScope m02_axi_rvalid
+addSignal -h 15 -holdScope m02_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awburst[1:0]
+addSignal -h 15 -holdScope m03_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_awregion[3:0]
+addSignal -h 15 -holdScope m03_axi_awuser[0:0]
+addSignal -h 15 -holdScope m03_axi_awvalid
+addSignal -h 15 -holdScope m03_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m03_axi_wlast
+addSignal -h 15 -holdScope m03_axi_wuser[0:0]
+addSignal -h 15 -holdScope m03_axi_wvalid
+addSignal -h 15 -holdScope m03_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_bresp[1:0]
+addSignal -h 15 -holdScope m03_axi_buser[0:0]
+addSignal -h 15 -holdScope m03_axi_bvalid
+addSignal -h 15 -holdScope m03_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arburst[1:0]
+addSignal -h 15 -holdScope m03_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_arregion[3:0]
+addSignal -h 15 -holdScope m03_axi_aruser[0:0]
+addSignal -h 15 -holdScope m03_axi_arvalid
+addSignal -h 15 -holdScope m03_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_axi_rresp[1:0]
+addSignal -h 15 -holdScope m03_axi_rlast
+addSignal -h 15 -holdScope m03_axi_ruser[0:0]
+addSignal -h 15 -holdScope m03_axi_rvalid
+addSignal -h 15 -holdScope m03_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awburst[1:0]
+addSignal -h 15 -holdScope m04_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_awregion[3:0]
+addSignal -h 15 -holdScope m04_axi_awuser[0:0]
+addSignal -h 15 -holdScope m04_axi_awvalid
+addSignal -h 15 -holdScope m04_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m04_axi_wlast
+addSignal -h 15 -holdScope m04_axi_wuser[0:0]
+addSignal -h 15 -holdScope m04_axi_wvalid
+addSignal -h 15 -holdScope m04_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_bresp[1:0]
+addSignal -h 15 -holdScope m04_axi_buser[0:0]
+addSignal -h 15 -holdScope m04_axi_bvalid
+addSignal -h 15 -holdScope m04_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arburst[1:0]
+addSignal -h 15 -holdScope m04_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_arregion[3:0]
+addSignal -h 15 -holdScope m04_axi_aruser[0:0]
+addSignal -h 15 -holdScope m04_axi_arvalid
+addSignal -h 15 -holdScope m04_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_axi_rresp[1:0]
+addSignal -h 15 -holdScope m04_axi_rlast
+addSignal -h 15 -holdScope m04_axi_ruser[0:0]
+addSignal -h 15 -holdScope m04_axi_rvalid
+addSignal -h 15 -holdScope m04_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awburst[1:0]
+addSignal -h 15 -holdScope m05_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_awregion[3:0]
+addSignal -h 15 -holdScope m05_axi_awuser[0:0]
+addSignal -h 15 -holdScope m05_axi_awvalid
+addSignal -h 15 -holdScope m05_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m05_axi_wlast
+addSignal -h 15 -holdScope m05_axi_wuser[0:0]
+addSignal -h 15 -holdScope m05_axi_wvalid
+addSignal -h 15 -holdScope m05_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_bresp[1:0]
+addSignal -h 15 -holdScope m05_axi_buser[0:0]
+addSignal -h 15 -holdScope m05_axi_bvalid
+addSignal -h 15 -holdScope m05_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arburst[1:0]
+addSignal -h 15 -holdScope m05_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_arregion[3:0]
+addSignal -h 15 -holdScope m05_axi_aruser[0:0]
+addSignal -h 15 -holdScope m05_axi_arvalid
+addSignal -h 15 -holdScope m05_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_axi_rresp[1:0]
+addSignal -h 15 -holdScope m05_axi_rlast
+addSignal -h 15 -holdScope m05_axi_ruser[0:0]
+addSignal -h 15 -holdScope m05_axi_rvalid
+addSignal -h 15 -holdScope m05_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awburst[1:0]
+addSignal -h 15 -holdScope m06_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_awregion[3:0]
+addSignal -h 15 -holdScope m06_axi_awuser[0:0]
+addSignal -h 15 -holdScope m06_axi_awvalid
+addSignal -h 15 -holdScope m06_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m06_axi_wlast
+addSignal -h 15 -holdScope m06_axi_wuser[0:0]
+addSignal -h 15 -holdScope m06_axi_wvalid
+addSignal -h 15 -holdScope m06_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_bresp[1:0]
+addSignal -h 15 -holdScope m06_axi_buser[0:0]
+addSignal -h 15 -holdScope m06_axi_bvalid
+addSignal -h 15 -holdScope m06_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arburst[1:0]
+addSignal -h 15 -holdScope m06_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_arregion[3:0]
+addSignal -h 15 -holdScope m06_axi_aruser[0:0]
+addSignal -h 15 -holdScope m06_axi_arvalid
+addSignal -h 15 -holdScope m06_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_axi_rresp[1:0]
+addSignal -h 15 -holdScope m06_axi_rlast
+addSignal -h 15 -holdScope m06_axi_ruser[0:0]
+addSignal -h 15 -holdScope m06_axi_rvalid
+addSignal -h 15 -holdScope m06_axi_rready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awaddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awburst[1:0]
+addSignal -h 15 -holdScope m07_axi_awlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_awregion[3:0]
+addSignal -h 15 -holdScope m07_axi_awuser[0:0]
+addSignal -h 15 -holdScope m07_axi_awvalid
+addSignal -h 15 -holdScope m07_axi_awready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_wdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_wstrb[3:0]
+addSignal -h 15 -holdScope m07_axi_wlast
+addSignal -h 15 -holdScope m07_axi_wuser[0:0]
+addSignal -h 15 -holdScope m07_axi_wvalid
+addSignal -h 15 -holdScope m07_axi_wready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_bid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_bresp[1:0]
+addSignal -h 15 -holdScope m07_axi_buser[0:0]
+addSignal -h 15 -holdScope m07_axi_bvalid
+addSignal -h 15 -holdScope m07_axi_bready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_araddr[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arlen[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arsize[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arburst[1:0]
+addSignal -h 15 -holdScope m07_axi_arlock
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arcache[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arprot[2:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arqos[3:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_arregion[3:0]
+addSignal -h 15 -holdScope m07_axi_aruser[0:0]
+addSignal -h 15 -holdScope m07_axi_arvalid
+addSignal -h 15 -holdScope m07_axi_arready
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_rid[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_axi_rresp[1:0]
+addSignal -h 15 -holdScope m07_axi_rlast
+addSignal -h 15 -holdScope m07_axi_ruser[0:0]
+addSignal -h 15 -holdScope m07_axi_rvalid
+addSignal -h 15 -holdScope m07_axi_rready
+addSignal -h 15 -UNSIGNED -UDEC -holdScope pass_count[31:0]
+addSignal -h 15 -UNSIGNED -UDEC -holdScope fail_count[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_rd_beat_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_wr_beat_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m00_wr_len_latch[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m01_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m02_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m03_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m04_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m05_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m06_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope m07_rd_cnt[7:0]
+addSignal -h 15 -UNSIGNED -UDEC -holdScope tc_bresp[31:0]
+addSignal -h 15 -UNSIGNED -UDEC -holdScope tc_rresp[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope tc_rdata[31:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope tmp_bresp[1:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope tmp_rresp[1:0]
+addSignal -h 15 -UNSIGNED -HEX -holdScope tmp_rdata[31:0]
+addGroup "G2"
+
+; getSignalForm Scope Hierarchy Status
+; active file of getSignalForm
+
