@@ -1,0 +1,19 @@
+verdiSetActWin -dock widgetDock_<Message>
+simSetSimulator "-vcssv" -exec \
+           "/home/student/1602-23-735-189/IPs/aes_core-master/run/simv_axi" \
+           -args
+debImport "-dbdir" \
+          "/home/student/1602-23-735-189/IPs/aes_core-master/run/simv_axi.daidir"
+debLoadSimResult \
+           /home/student/1602-23-735-189/IPs/aes_core-master/run/dump_axi_slave.fsdb
+wvCreateWindow
+verdiSetActWin -dock widgetDock_MTB_SOURCE_TAB_1
+srcHBSelect "tb_aes_axi_slave.dut" -win $_nTrace1
+verdiSetActWin -dock widgetDock_<Inst._Tree>
+srcHBSelect "tb_aes_axi_slave.dut" -win $_nTrace1
+srcHBSelect "tb_aes_axi_slave.dut" -win $_nTrace1
+srcHBSelect "tb_aes_axi_slave.dut" -win $_nTrace1
+srcSetScope "tb_aes_axi_slave.dut" -delim "." -win $_nTrace1
+srcHBSelect "tb_aes_axi_slave.dut" -win $_nTrace1
+verdiSetActWin -dock widgetDock_<Signal_List>
+debExit

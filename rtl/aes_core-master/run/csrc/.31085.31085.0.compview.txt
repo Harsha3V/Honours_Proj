@@ -1,0 +1,5 @@
+{"vcs1":{"timestamp_begin":1788601276.285252318, "rt":0.61, "ut":0.03, "st":0.01}}
+{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1788601276.049424517}
+{"VCS_COMP_START_TIME": 1788601276.049424517}
+{"VCS_COMP_END_TIME": 1788601276.915834019}
+{"VCS_USER_OPTIONS": "-full64 -debug_access+all -kdb +incdir+../rtl/verilog ../rtl/verilog/timescale.v ../rtl/verilog/aes_inv_sbox.v ../rtl/verilog/aes_key_expand_128.v ../rtl/verilog/aes_rcon.v ../rtl/verilog/aes_sbox.v ../rtl/verilog/aes_cipher_top.v ../rtl/verilog/aes_inv_cipher_top.v ../rtl/verilog/aes_axi_slave.v ../bench/verilog/tb_aes_axi_slave.v -top tb_aes_axi_slave -o simv_axi"}

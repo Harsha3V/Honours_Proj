@@ -1,0 +1,2 @@
+../bench/verilog/tb_aes_axi_slave.v
+../rtl/verilog/aes_axi_slave.v

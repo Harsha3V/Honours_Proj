@@ -1,0 +1,259 @@
+================================================================================
+        AES-128 AXI4-LITE REGISTER SPECIFICATION
+================================================================================
+
+Reference : aes.pdf (ASICS.ws AES-128 Cipher Core)
+Standard  : AES-128 (FIPS 197), AXI4-Lite (AMBA 4)
+Revision  : 2.0
+Date      : September 2026
+
+================================================================================
+1. OVERVIEW
+================================================================================
+
+This document defines the 32-bit register set used to interface the AES-128
+cipher and inverse-cipher cores through an AXI4-Lite slave.
+
+Two independent register blocks are defined:
+
+  Block A  (base offset 0x00) : aes_cipher_top     (Encryption)
+  Block B  (base offset 0x40) : aes_inv_cipher_top (Decryption)
+
+All registers are 32 bits wide.
+The 128-bit key and 128-bit text fields are each split across four 32-bit
+registers, MSW first (WORD0 = bits [127:96]).
+
+================================================================================
+2. REGISTER MAP SUMMARY
+================================================================================
+
+  Offset | Register Name    | Block       | Access | Description
+  -------|------------------|-------------|--------|---------------------------
+  0x00   | CIPHER_CSR       | Cipher      | R/W    | Control & Status Register
+  0x04   | CIPHER_KEY0      | Cipher      | R/W    | Key bits [127:96]
+  0x08   | CIPHER_KEY1      | Cipher      | R/W    | Key bits [95:64]
+  0x0C   | CIPHER_KEY2      | Cipher      | R/W    | Key bits [63:32]
+  0x10   | CIPHER_KEY3      | Cipher      | R/W    | Key bits [31:0]
+  0x14   | CIPHER_TIN0      | Cipher      | R/W    | Text-In bits [127:96]
+  0x18   | CIPHER_TIN1      | Cipher      | R/W    | Text-In bits [95:64]
+  0x1C   | CIPHER_TIN2      | Cipher      | R/W    | Text-In bits [63:32]
+  0x20   | CIPHER_TIN3      | Cipher      | R/W    | Text-In bits [31:0]
+  0x24   | CIPHER_TOUT0     | Cipher      | RO     | Text-Out bits [127:96]
+  0x28   | CIPHER_TOUT1     | Cipher      | RO     | Text-Out bits [95:64]
+  0x2C   | CIPHER_TOUT2     | Cipher      | RO     | Text-Out bits [63:32]
+  0x30   | CIPHER_TOUT3     | Cipher      | RO     | Text-Out bits [31:0]
+  -------|------------------|-------------|--------|---------------------------
+  0x40   | INV_CSR          | Inv Cipher  | R/W    | Control & Status Register
+  0x44   | INV_KEY0         | Inv Cipher  | R/W    | Key bits [127:96]
+  0x48   | INV_KEY1         | Inv Cipher  | R/W    | Key bits [95:64]
+  0x4C   | INV_KEY2         | Inv Cipher  | R/W    | Key bits [63:32]
+  0x50   | INV_KEY3         | Inv Cipher  | R/W    | Key bits [31:0]
+  0x54   | INV_TIN0         | Inv Cipher  | R/W    | Text-In bits [127:96]
+  0x58   | INV_TIN1         | Inv Cipher  | R/W    | Text-In bits [95:64]
+  0x5C   | INV_TIN2         | Inv Cipher  | R/W    | Text-In bits [63:32]
+  0x60   | INV_TIN3         | Inv Cipher  | R/W    | Text-In bits [31:0]
+  0x64   | INV_TOUT0        | Inv Cipher  | RO     | Text-Out bits [127:96]
+  0x68   | INV_TOUT1        | Inv Cipher  | RO     | Text-Out bits [95:64]
+  0x6C   | INV_TOUT2        | Inv Cipher  | RO     | Text-Out bits [63:32]
+  0x70   | INV_TOUT3        | Inv Cipher  | RO     | Text-Out bits [31:0]
+
+  Access : R/W = Read/Write,  RO = Read Only
+
+================================================================================
+3. REGISTER BIT DEFINITIONS
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1  CIPHER_CSR  (Offset 0x00) - Cipher Control & Status Register
+--------------------------------------------------------------------------------
+
+  Bits   | Field      | Dir | Reset | Description
+  -------|------------|-----|-------|-------------------------------------------
+  [31:17]| Reserved   |  -  |  0    | Write 0, reads as 0
+  [16]   | START      | W/R |  0    | Write 1 to start encryption.
+         |            |     |       | Auto-clears after 1 cycle (self-clearing).
+         |            |     |       | Drives the 'ld' input of aes_cipher_top.
+  [15:2] | Reserved   |  -  |  0    | Write 0, reads as 0
+  [1]    | BUSY       | RO  |  0    | 1 = Core is processing (dcnt != 0).
+         |            |     |       | 0 = Core idle or done.
+  [0]    | DONE       | RO  |  0    | 1 = Encryption complete, text_out valid.
+         |            |     |       | Cleared when START is written again.
+
+  Usage:
+    Write 0x00010000 to start encryption.
+    Poll bit[0] until DONE=1, then read CIPHER_TOUT0..3.
+
+--------------------------------------------------------------------------------
+3.2  CIPHER_KEY0..3  (Offsets 0x04 - 0x10) - 128-bit Encryption Key
+--------------------------------------------------------------------------------
+
+  Register   | Offset | Bits    | AES Key bits | Reset
+  -----------|--------|---------|--------------|-------
+  CIPHER_KEY0| 0x04   | [31:0]  | key[127:96]  | 0x00000000
+  CIPHER_KEY1| 0x08   | [31:0]  | key[95:64]   | 0x00000000
+  CIPHER_KEY2| 0x0C   | [31:0]  | key[63:32]   | 0x00000000
+  CIPHER_KEY3| 0x10   | [31:0]  | key[31:0]    | 0x00000000
+
+  - All 32 bits of each register are used.
+  - Concatenated: {KEY0, KEY1, KEY2, KEY3} = key[127:0]
+  - Must be written before asserting START.
+
+--------------------------------------------------------------------------------
+3.3  CIPHER_TIN0..3  (Offsets 0x14 - 0x20) - 128-bit Plaintext Input
+--------------------------------------------------------------------------------
+
+  Register   | Offset | Bits    | text_in bits  | Reset
+  -----------|--------|---------|---------------|-------
+  CIPHER_TIN0| 0x14   | [31:0]  | text_in[127:96]| 0x00000000
+  CIPHER_TIN1| 0x18   | [31:0]  | text_in[95:64] | 0x00000000
+  CIPHER_TIN2| 0x1C   | [31:0]  | text_in[63:32] | 0x00000000
+  CIPHER_TIN3| 0x20   | [31:0]  | text_in[31:0]  | 0x00000000
+
+  - All 32 bits of each register are used.
+  - Concatenated: {TIN0, TIN1, TIN2, TIN3} = text_in[127:0]
+  - Must be written before asserting START.
+
+--------------------------------------------------------------------------------
+3.4  CIPHER_TOUT0..3  (Offsets 0x24 - 0x30) - 128-bit Ciphertext Output
+--------------------------------------------------------------------------------
+
+  Register    | Offset | Bits    | text_out bits   | Reset
+  ------------|--------|---------|-----------------|-------
+  CIPHER_TOUT0| 0x24   | [31:0]  | text_out[127:96] | 0x00000000
+  CIPHER_TOUT1| 0x28   | [31:0]  | text_out[95:64]  | 0x00000000
+  CIPHER_TOUT2| 0x2C   | [31:0]  | text_out[63:32]  | 0x00000000
+  CIPHER_TOUT3| 0x30   | [31:0]  | text_out[31:0]   | 0x00000000
+
+  - Read Only. Driven directly from aes_cipher_top text_out port.
+  - Concatenated: {TOUT0, TOUT1, TOUT2, TOUT3} = text_out[127:0]
+  - Valid only after DONE=1.
+
+================================================================================
+
+--------------------------------------------------------------------------------
+3.5  INV_CSR  (Offset 0x40) - Inverse Cipher Control & Status Register
+--------------------------------------------------------------------------------
+
+  Bits   | Field      | Dir | Reset | Description
+  -------|------------|-----|-------|-------------------------------------------
+  [31:18]| Reserved   |  -  |  0    | Write 0, reads as 0
+  [17]   | START      | W/R |  0    | Write 1 to start decryption.
+         |            |     |       | Auto-clears after 1 cycle (self-clearing).
+         |            |     |       | Drives 'ld' of aes_inv_cipher_top.
+         |            |     |       | Only assert after KDONE=1.
+  [16]   | KEY_LOAD   | W/R |  0    | Write 1 to start key schedule expansion.
+         |            |     |       | Auto-clears after 1 cycle (self-clearing).
+         |            |     |       | Drives 'kld' of aes_inv_cipher_top.
+  [15:3] | Reserved   |  -  |  0    | Write 0, reads as 0
+  [2]    | BUSY       | RO  |  0    | 1 = Core is processing decryption.
+  [1]    | KDONE      | RO  |  0    | 1 = Key expansion complete. Safe to
+         |            |     |       | assert START for decryption.
+  [0]    | DONE       | RO  |  0    | 1 = Decryption complete, text_out valid.
+         |            |     |       | Cleared when START is written again.
+
+  Usage:
+    Write 0x00010000 to start key load (KEY_LOAD=1).
+    Poll bit[1] until KDONE=1.
+    Write cipher text to INV_TIN0..3.
+    Write 0x00020000 to start decryption (START=1).
+    Poll bit[0] until DONE=1, then read INV_TOUT0..3.
+
+--------------------------------------------------------------------------------
+3.6  INV_KEY0..3  (Offsets 0x44 - 0x50) - 128-bit Decryption Key
+--------------------------------------------------------------------------------
+
+  Register  | Offset | Bits    | AES Key bits  | Reset
+  ----------|--------|---------|---------------|-------
+  INV_KEY0  | 0x44   | [31:0]  | key[127:96]   | 0x00000000
+  INV_KEY1  | 0x48   | [31:0]  | key[95:64]    | 0x00000000
+  INV_KEY2  | 0x4C   | [31:0]  | key[63:32]    | 0x00000000
+  INV_KEY3  | 0x50   | [31:0]  | key[31:0]     | 0x00000000
+
+  - Same 128-bit key as used for encryption.
+  - Concatenated: {KEY0, KEY1, KEY2, KEY3} = key[127:0]
+  - Must be written before asserting KEY_LOAD.
+
+--------------------------------------------------------------------------------
+3.7  INV_TIN0..3  (Offsets 0x54 - 0x60) - 128-bit Ciphertext Input
+--------------------------------------------------------------------------------
+
+  Register  | Offset | Bits    | text_in bits    | Reset
+  ----------|--------|---------|-----------------|-------
+  INV_TIN0  | 0x54   | [31:0]  | text_in[127:96] | 0x00000000
+  INV_TIN1  | 0x58   | [31:0]  | text_in[95:64]  | 0x00000000
+  INV_TIN2  | 0x5C   | [31:0]  | text_in[63:32]  | 0x00000000
+  INV_TIN3  | 0x60   | [31:0]  | text_in[31:0]   | 0x00000000
+
+  - Concatenated: {TIN0, TIN1, TIN2, TIN3} = text_in[127:0]
+  - Must be written before asserting START.
+
+--------------------------------------------------------------------------------
+3.8  INV_TOUT0..3  (Offsets 0x64 - 0x70) - 128-bit Plaintext Output
+--------------------------------------------------------------------------------
+
+  Register  | Offset | Bits    | text_out bits    | Reset
+  ----------|--------|---------|------------------|-------
+  INV_TOUT0 | 0x64   | [31:0]  | text_out[127:96] | 0x00000000
+  INV_TOUT1 | 0x68   | [31:0]  | text_out[95:64]  | 0x00000000
+  INV_TOUT2 | 0x6C   | [31:0]  | text_out[63:32]  | 0x00000000
+  INV_TOUT3 | 0x70   | [31:0]  | text_out[31:0]   | 0x00000000
+
+  - Read Only. Driven from aes_inv_cipher_top text_out port.
+  - Concatenated: {TOUT0, TOUT1, TOUT2, TOUT3} = text_out[127:0]
+  - Valid only after DONE=1.
+
+================================================================================
+4. SOFTWARE OPERATING SEQUENCE
+================================================================================
+
+  Encryption:
+  -----------
+  1. Write INV_KEY0..KEY3    (0x04..0x10)  with 128-bit key.
+  2. Write CIPHER_TIN0..TIN3 (0x14..0x20)  with 128-bit plaintext.
+  3. Write 0x00010000 to CIPHER_CSR (0x00) -- START=1.
+  4. Poll CIPHER_CSR bit[0]  until DONE=1.
+  5. Read  CIPHER_TOUT0..3   (0x24..0x30)  for ciphertext output.
+
+  Decryption:
+  -----------
+  1. Write INV_KEY0..KEY3    (0x44..0x50)  with 128-bit key.
+  2. Write 0x00010000 to INV_CSR (0x40)   -- KEY_LOAD=1.
+  3. Poll  INV_CSR bit[1]    until KDONE=1.
+  4. Write INV_TIN0..TIN3    (0x54..0x60)  with 128-bit ciphertext.
+  5. Write 0x00020000 to INV_CSR (0x40)   -- START=1.
+  6. Poll  INV_CSR bit[0]    until DONE=1.
+  7. Read  INV_TOUT0..3      (0x64..0x70)  for plaintext output.
+
+================================================================================
+5. AXI4-LITE INTERFACE SUMMARY
+================================================================================
+
+  Signal           | Dir (Slave) | Width | Description
+  -----------------|-------------|-------|-------------------------------------
+  s_axi_aclk       | Input       |   1   | AXI clock
+  s_axi_aresetn    | Input       |   1   | AXI active-low reset
+  s_axi_awaddr     | Input       |   8   | Write address (byte addressed)
+  s_axi_awvalid    | Input       |   1   | Write address valid
+  s_axi_awready    | Output      |   1   | Write address ready
+  s_axi_wdata      | Input       |  32   | Write data
+  s_axi_wstrb      | Input       |   4   | Write byte strobes
+  s_axi_wvalid     | Input       |   1   | Write data valid
+  s_axi_wready     | Output      |   1   | Write data ready
+  s_axi_bresp      | Output      |   2   | Write response (00=OKAY)
+  s_axi_bvalid     | Output      |   1   | Write response valid
+  s_axi_bready     | Input       |   1   | Write response ready
+  s_axi_araddr     | Input       |   8   | Read address (byte addressed)
+  s_axi_arvalid    | Input       |   1   | Read address valid
+  s_axi_arready    | Output      |   1   | Read address ready
+  s_axi_rdata      | Output      |  32   | Read data
+  s_axi_rresp      | Output      |   2   | Read response (00=OKAY)
+  s_axi_rvalid     | Output      |   1   | Read data valid
+  s_axi_rready     | Input       |   1   | Read data ready
+
+  - Address width: 8 bits (covers 0x00..0x70)
+  - Data width: 32 bits
+  - All accesses are 32-bit aligned
+
+================================================================================
+END OF DOCUMENT
+================================================================================

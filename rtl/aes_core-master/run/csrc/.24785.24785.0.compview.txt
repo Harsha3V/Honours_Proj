@@ -1,0 +1,6 @@
+Command exited with non-zero status 3
+{"comelab":{"timestamp_begin":1788597745.157624334, "rt":0.01, "ut":0.00, "st":0.00}}
+{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1788597744.973462754}
+{"VCS_COMP_START_TIME": 1788597744.973462754}
+{"VCS_COMP_END_TIME": 1788597745.186944336}
+{"VCS_USER_OPTIONS": "-full64 -debug_access+all -kdb aes_axi_slave.v tb_aes_axi_slave.v -o simv"}

@@ -1,0 +1,6 @@
+Command exited with non-zero status 255
+{"comelab":{"timestamp_begin":1788597655.700310340, "rt":1.77, "ut":0.23, "st":0.12}}
+{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1788597655.476199716}
+{"VCS_COMP_START_TIME": 1788597655.476199716}
+{"VCS_COMP_END_TIME": 1788597657.491898078}
+{"VCS_USER_OPTIONS": "-full64 -debug_access+all -kdb .E -o simv"}

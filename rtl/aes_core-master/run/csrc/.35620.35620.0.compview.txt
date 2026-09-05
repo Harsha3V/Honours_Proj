@@ -1,0 +1,7 @@
+Command exited with non-zero status 255
+{"vcs1":{"timestamp_begin":1788603028.009351852, "rt":2.57, "ut":0.03, "st":0.02}}
+{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1788603027.826124819}
+{"VCS_COMP_START_TIME": 1788603027.826124819}
+{"VCS_COMP_END_TIME": 1788603030.609929682}
+{"VCS_USER_OPTIONS": "-full64 -debug_access+all -kdb ../rtl/verilog/timescale.v ../rtl/verilog/aes_axi_slave.v tb_aes_axi_slave.v -o simv"}
+{"vcs1": {"peak_mem": 533864}}
