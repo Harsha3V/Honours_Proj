@@ -4,7 +4,9 @@
 
 # Compiled simulation binary and its support directory
 run/simv
+run/simv_axi
 run/simv.daidir/
+run/simv_axi.daidir/
 
 # VCS compile output
 run/csrc/
@@ -46,6 +48,11 @@ ucli.key
 __pycache__/
 *.py[cod]
 *.pyo
+
+# ============================================================
+# AES submodule folder (individual files copied to rtl/ directly)
+# ============================================================
+rtl/aes_core-master/
 
 # ============================================================
 # Editor / OS Artifacts

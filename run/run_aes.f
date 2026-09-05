@@ -1,0 +1,10 @@
++incdir+../rtl
+../rtl/timescale.v
+../rtl/aes_inv_sbox.v
+../rtl/aes_key_expand_128.v
+../rtl/aes_rcon.v
+../rtl/aes_sbox.v
+../rtl/aes_cipher_top.v
+../rtl/aes_inv_cipher_top.v
+../rtl/aes_axi_slave.v
+../tb/tb_aes_axi_slave.v
