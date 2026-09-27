@@ -1,8 +1,0 @@
-/home/student/1602-23-735-189/IPs/aes_core-master/bench/verilog/test_bench_top.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/aes_cipher_top.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/aes_inv_cipher_top.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/aes_inv_sbox.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/aes_key_expand_128.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/aes_rcon.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/aes_sbox.v
-/home/student/1602-23-735-189/IPs/aes_core-master/rtl/verilog/timescale.v

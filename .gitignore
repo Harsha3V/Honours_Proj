@@ -1,66 +1,71 @@
 # ============================================================
-# VCS / Synopsys Simulation Build Artifacts
+# .gitignore — Honours Project RTL SoC
 # ============================================================
 
-# Compiled simulation binary and its support directory
-run/simv
-run/simv_axi
-run/simv.daidir/
-run/simv_axi.daidir/
+# ----- VCS / Synopsys Simulation Artifacts -----
+simv
+simv.daidir/
+csrc/
+*.key
+ucli.key
+vc_hdrs.h
 
-# VCS compile output
-run/csrc/
-*.o
-*.so
-*.a
-
-# ============================================================
-# Waveform / Dump Files
-# ============================================================
-*.vcd
+# ----- Verdi / Novas -----
 *.fsdb
-*.vpd
-*.shm/
-
-# ============================================================
-# Verdi / Novas Log and Session Files
-# ============================================================
-run/verdiLog/
-run/novas.conf
-run/novas.rc
-run/novas_dump.log
-run/verdi_config_file
-run/ucli.key
 novas.conf
 novas.rc
+novas_dump.log
+verdiLog/
+verdi_config_file
+*.vf
+*.vpd
 
-# ============================================================
-# Simulation Logs and Compile Logs
-# ============================================================
-run/compile.log
-run/run.f
+# ----- Waveform dumps -----
+*.vcd
+*.shm/
+*.trn
+*.dsn
+
+# ----- Compile / build logs -----
+compile.log
 *.log
-ucli.key
+*.err
 
-# ============================================================
-# Python Bytecode
-# ============================================================
+# ----- Synopsys Design Compiler -----
+*.ddc
+*.svf
+*.mr
+work/
+WORK/
+mapped/
+unmapped/
+reports/
+.synopsys_dc.setup
+
+# ----- Cadence -----
+xcelium.d/
+*.diag
+*.history
+.simvision/
+
+# ----- Python -----
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
+*.egg-info/
+.env
 
-# ============================================================
-# AES submodule folder (individual files copied to rtl/ directly)
-# ============================================================
-rtl/aes_core-master/
-
-# ============================================================
-# Editor / OS Artifacts
-# ============================================================
+# ----- OS junk -----
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ----- Editor junk -----
 *.swp
 *.swo
 *~
-.idea/
 .vscode/
+.idea/
+
+# ----- Keep empty folders tracked -----
+!**/.gitkeep
