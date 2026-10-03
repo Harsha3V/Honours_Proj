@@ -1,0 +1,14 @@
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/axi_internal_fifo.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/axi_uart_top.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/include/axi_uart.vh
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/include/axi_uart_defines.vh
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/uart_controller.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/uart_parity_bit_compute.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/uart_receiver.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/rtl/uart/uart_transmitter.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/tb/uart_tb/tb_axi_internal_fifo.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/tb/uart_tb/tb_axi_uart_top.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/tb/uart_tb/tb_uart_controller.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/tb/uart_tb/tb_uart_parity_bit_compute.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/tb/uart_tb/tb_uart_receiver.v
+/home/student/Documents/1602-23-735-189/Honours_Proj/tb/uart_tb/tb_uart_transmitter.v

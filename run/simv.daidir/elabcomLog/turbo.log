@@ -1,3 +1,0 @@
-Command Line: /home/student/snps_tools_target/vcs/U-2023.03/linux64/bin/elabcom -logdir /home/student/Documents/harsha-189/run/simv.daidir/elabcomLog -simvdaidir /home/student/Documents/harsha-189/run/simv.daidir -lib /home/student/Documents/harsha-189/run/simv.daidir/work -saveLevel -elab /home/student/Documents/harsha-189/run/simv.daidir/kdb -simflow -simdir /home/student/Documents/harsha-189/run/simv.daidir/kdb_libs -topfile /home/student/Documents/harsha-189/run/simv.daidir/.elabcomTopFile -ssv -ssy -Lf work +disable_message+C00380+C00381 +disable_message+C00388+C00389
-uname(Linux vlsi54.vce.ac.in 4.18.0-553.56.1.el8_10.x86_64 #1 SMP Tue Jun 10 17:00:45 UTC 2025 x86_64)
-au time 0.045036 0.016670 0.007923 delta 91447296 91447296 total 273670144 273670144

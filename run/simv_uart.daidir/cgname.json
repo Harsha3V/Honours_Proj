@@ -1,0 +1,32 @@
+{
+    "std": [
+        "std",
+        "reYIK",
+        "module",
+        1
+    ],
+    "axi_internal_fifo_0000": [
+        "axi_internal_fifo_0000",
+        "Bvfk1",
+        "module",
+        7
+    ],
+    "axi_internal_fifo_0001": [
+        "axi_internal_fifo_0001",
+        "jTQWg",
+        "module",
+        8
+    ],
+    "tb_axi_uart_top": [
+        "tb_axi_uart_top",
+        "Vf5p0",
+        "module",
+        9
+    ],
+    "...MASTER...": [
+        "SIM",
+        "amcQw",
+        "module",
+        6
+    ]
+}
