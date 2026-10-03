@@ -1,0 +1,419 @@
+# Honours Project — Progress Log
+# VeeR EL2 RISC-V Core + AXI Interconnect + UART SoC Integration
+# ================================================================
+# Date     : 26 September 2026
+# Engineer : Student (1602-23-735-189)
+# Tool     : Synopsys VCS U-2023.03, Verdi U-2023.03-SP1
+# ================================================================
+
+
+## ================================================================
+## SECTION 1 — WHAT THE PROJECT IS
+## ================================================================
+
+This is an Honours Project to build a complete SoC (System-on-Chip)
+by integrating:
+
+  1. VeeR EL2 RISC-V Core  — a real 32-bit RISC-V processor (RV32IMC)
+  2. AXI Interconnect       — 2-master x 8-slave AXI4 crossbar
+  3. AXI4→AXI4-Lite Bridge  — protocol converter
+  4. UART                   — serial communication peripheral
+  5. IFU ROM Stub           — instruction memory for the CPU
+
+The goal: VeeR EL2 boots from ROM, sets up the UART, and sends
+"Hello UART\r\n" over the serial TX pin.
+
+
+## ================================================================
+## SECTION 2 — WHAT ALREADY EXISTED (BEFORE TODAY)
+## ================================================================
+
+Location: Honours_Proj/rtl/
+
+  rtl/
+  ├── bridge/
+  │     axi_to_axilite_uart_bridge.v   — AXI4 to AXI4-Lite protocol bridge
+  ├── interconnect/
+  │     axi_interconnect_wrap_2x8.v    — 2-master x 8-slave AXI4 crossbar
+  │     axi_interconnect(1).v          — core interconnect logic
+  │     arbiter(1).v                   — round-robin arbiter
+  │     priority_encoder(1).v          — priority encoder
+  ├── uart/
+  │     axi_uart_top.v                 — UART AXI4-Lite slave (top)
+  │     uart_controller.v              — baud rate + TX/RX control
+  │     uart_transmitter.v             — serial TX shift register
+  │     uart_receiver.v                — serial RX shift register
+  │     axi_internal_fifo.v            — TX and RX FIFOs
+  │     uart_parity_bit_compute.v      — parity logic
+  │     include/axi_uart.vh            — register map defines
+  │     include/axi_uart_defines.vh    — parameter defines
+  ├── top/
+  │     axi_interconnect_uart_top.v    — existing top: IC + Bridge + UART
+  ├── aes/                             — AES crypto (not integrated yet)
+  └── memory/
+        ifu_rom_stub.v                 — (old version, now replaced)
+
+  tb/
+  ├── uart_tb/                         — existing UART unit testbenches
+  ├── interconnect_tb/                 — existing interconnect testbenches
+  └── tb_axi_interconnect_uart_top.v   — existing integration testbench
+
+The existing design before today:
+
+  Testbench (manual AXI driver)
+       ↓  AXI4
+  [axi_interconnect_wrap_2x8]
+       ↓  AXI4
+  [axi_to_axilite_uart_bridge]
+       ↓  AXI4-Lite
+  [axi_uart_top]
+       ↓
+  uart_tx_o / uart_rx_i
+
+  → No real CPU. The testbench acted as the CPU.
+
+
+## ================================================================
+## SECTION 3 — WHAT WAS DONE TODAY (STEP BY STEP)
+## ================================================================
+
+--------------------------------------------------------------
+STEP 1 — Cloned VeeR EL2 RISC-V Core
+--------------------------------------------------------------
+Command run:
+  git clone https://github.com/chipsalliance/Cores-VeeR-EL2.git \
+    Honours_Proj/rtl/Cores-VeeR-EL2
+
+Result:
+  Honours_Proj/rtl/Cores-VeeR-EL2/
+  ├── design/          — actual RTL (.sv files)
+  │   ├── el2_veer_wrapper.sv   — top-level wrapper with AXI4 ports
+  │   ├── el2_veer.sv           — core pipeline
+  │   ├── el2_mem.sv            — DCCM/ICCM/ICache SRAM
+  │   ├── ifu/, dec/, exu/, lsu/, dbg/, dmi/, lib/
+  │   └── include/el2_def.sv    — el2_pkg package (el2_param_t type)
+  ├── configs/
+  │   ├── el2_param.vh          — auto-generated core parameters
+  │   ├── common_defines.vh     — common defines
+  │   └── el2_pdef.vh           — parameter defaults
+  ├── testbench/
+  └── docs/
+
+VeeR EL2 key facts:
+  - 32-bit RISC-V, RV32IMC instruction set
+  - 4-stage in-order pipeline
+  - AXI4 bus (with +define+RV_BUILD_AXI4)
+  - LSU (Load/Store Unit) AXI: 64-bit data, 3-bit ID (LSU_BUS_TAG)
+  - IFU (Instruction Fetch Unit) AXI: 64-bit data, 3-bit ID (IFU_BUS_TAG)
+  - Internal DCCM (data) and ICCM (instruction) memories
+  - Internal ICache
+  - JTAG debug port
+
+
+--------------------------------------------------------------
+STEP 2 — Created ifu_rom_stub.v  (NEW FILE)
+--------------------------------------------------------------
+Location: Honours_Proj/rtl/memory/ifu_rom_stub.v
+
+Purpose:
+  VeeR IFU needs somewhere to fetch instructions from.
+  This module is an AXI4 read-only ROM that:
+    - Stores instructions as 32-bit words (ROM_WORDS = 1024 = 4KB)
+    - Pairs two 32-bit words into each 64-bit AXI beat (IFU fetches 64-bit)
+    - Loads boot.hex at simulation start via $readmemh
+    - Supports AXI4 burst reads
+    - Accepts write channel transactions silently (IFU never writes)
+
+Key parameter:
+  ROM_FILE = "../sw/boot.hex"   (relative to simulation run directory)
+
+
+--------------------------------------------------------------
+STEP 3 — Created veer_uart_soc_top.v  (NEW FILE)
+--------------------------------------------------------------
+Location: Honours_Proj/rtl/top/veer_uart_soc_top.v
+
+Purpose:
+  This is the NEW SoC top-level that connects everything together.
+
+Design hierarchy:
+  veer_uart_soc_top
+    ├── u_veer        : el2_veer_wrapper  (VeeR EL2 RISC-V CPU)
+    ├── u_ifu_rom     : ifu_rom_stub      (Instruction ROM)
+    └── u_ic_uart     : axi_interconnect_uart_top  (IC + Bridge + UART)
+
+Key interface adaptations made:
+  ┌─────────────────────────────────┬──────────────────────────────────────┐
+  │ Problem                         │ Solution                             │
+  ├─────────────────────────────────┼──────────────────────────────────────┤
+  │ LSU AXI data = 64-bit           │ Lower 32 bits used; rdata zero-pad   │
+  │ IC interconnect data = 32-bit   │ 64→32 truncation on wdata/wstrb      │
+  ├─────────────────────────────────┼──────────────────────────────────────┤
+  │ LSU AXI ID = 3-bit (LSU_BUS_TAG)│ Zero-extend to 8-bit for interconnect│
+  │ IC ID = 8-bit                   │ Truncate back to 3-bit on response   │
+  ├─────────────────────────────────┼──────────────────────────────────────┤
+  │ el2_mem_if interface ports      │ Declared el2_mem_if mem_export_iface │
+  │ (el2_mem_export, icache_export) │ connected via modports               │
+  ├─────────────────────────────────┼──────────────────────────────────────┤
+  │ SB (debug) uses AHB in this ver │ AHB SB ports tied off                │
+  │ DMA uses AHB in this version    │ AHB DMA ports tied off               │
+  ├─────────────────────────────────┼──────────────────────────────────────┤
+  │ Lockstep / shadow trace ports   │ All tied to MuBi4False / open        │
+  │ DMI ports                       │ Tied off (not used in simulation)    │
+  └─────────────────────────────────┴──────────────────────────────────────┘
+
+
+--------------------------------------------------------------
+STEP 4 — Created boot.S  (NEW FILE — RISC-V Assembly)
+--------------------------------------------------------------
+Location: Honours_Proj/sw/boot.S
+
+Purpose:
+  The program that runs on VeeR EL2 CPU.
+
+What it does:
+  1. Sets stack pointer to top of DCCM (0x50020000)
+  2. Loads UART base address (0x00000000) into a0
+  3. Writes baud divisor = 868 to UART_BAUD_DIV (offset 0x08)
+     [100 MHz clock / 115200 baud = 868]
+  4. Writes LCR = 0x03 to UART_LCR (offset 0x0C)
+     [8-bit word, 1 stop bit, no parity]
+  5. Sends "Hello UART\r\n" one byte at a time
+     - Polls LSR bit 5 (THRE) before each byte
+     - Writes byte to THR (offset 0x00)
+  6. Infinite loop (done: j done)
+
+UART Register Map used:
+  Offset 0x00 → THR (TX Holding Register) — write TX byte here
+  Offset 0x08 → BAUD_DIV — baud rate divisor
+  Offset 0x0C → LCR     — line control register
+  Offset 0x14 → LSR     — line status register (bit 5 = THRE)
+
+Boot address: 0x80000000 (VeeR reset vector)
+
+
+--------------------------------------------------------------
+STEP 5 — Created boot.ld  (NEW FILE — Linker Script)
+--------------------------------------------------------------
+Location: Honours_Proj/sw/boot.ld
+
+Memory map:
+  ROM  : 0x80000000 (16KB) — instruction memory (ifu_rom_stub)
+  DCCM : 0x50000000 (128KB) — data / stack (VeeR internal DCCM)
+
+
+--------------------------------------------------------------
+STEP 6 — Compiled boot.S → boot.hex
+--------------------------------------------------------------
+Location: Honours_Proj/sw/boot.hex
+
+Commands:
+  /opt/riscv/bin/riscv64-unknown-elf-gcc \
+      -march=rv32imc -mabi=ilp32          \
+      -nostdlib -nostartfiles             \
+      -T boot.ld -o boot.elf boot.S
+
+  riscv64-unknown-elf-objcopy -O binary --only-section=.text boot.elf boot.bin
+  python3 → boot.hex  (one 32-bit word per line, little-endian)
+
+Result: 20 words (80 bytes) of compiled RISC-V machine code
+
+
+--------------------------------------------------------------
+STEP 7 — Created tb_veer_uart_soc.v  (NEW TESTBENCH)
+--------------------------------------------------------------
+Location: Honours_Proj/tb/tb_veer_uart_soc.v
+
+What it does:
+  - Generates 100 MHz clock (10 ns period)
+  - Holds reset for 20 cycles, then releases
+  - Sets rst_vec = 0x80000000 (CPU boots from ROM)
+  - Monitors uart_tx_o — detects start bit, samples 8 data bits
+  - Prints each received character to console
+  - Checks received string against "Hello UART\r\n"
+  - Prints PASS or FAIL
+  - Timeout = 5 ms simulated time
+
+
+--------------------------------------------------------------
+STEP 8 — Created run_veer_uart_soc.f  (VCS FILELIST)
+--------------------------------------------------------------
+Location: Honours_Proj/run/run_veer_uart_soc.f
+
+Contains all files in correct compile order:
+  1. el2_assert.sv          (macro definitions — MUST be first)
+  2. el2_def.sv             (el2_pkg package with el2_param_t)
+  3. el2_mubi_pkg.sv
+  4. el2_lockstep_pkg.sv
+  5. All VeeR library files (el2_lib.sv, el2_mem_if.sv, etc.)
+  6. All VeeR IFU/DEC/EXU/LSU/DBG/DMI files
+  7. el2_veer.sv, el2_veer_wrapper.sv
+  8. Honours Project RTL (interconnect, UART, bridge, top)
+  9. ifu_rom_stub.v, veer_uart_soc_top.v
+  10. tb_veer_uart_soc.v
+
+
+## ================================================================
+## SECTION 4 — ERRORS ENCOUNTERED AND FIXED
+## ================================================================
+
+ERROR 1: RV_ROOT undefined variable
+  Cause  : Used bash 'export' syntax in csh shell
+  Fix    : Use 'setenv RV_ROOT <path>' in csh
+
+ERROR 2: Undefined macro ASSERT_STATIC_IN_PACKAGE
+  File   : el2_mubi_pkg.sv line 41
+  Cause  : el2_mubi_pkg.sv was compiled before el2_assert.sv
+           which defines the ASSERT_STATIC_IN_PACKAGE macro
+  Fix    : Moved el2_assert.sv to TOP of filelist (before all packages)
+
+ERROR 3: Package el2_pkg not defined
+  File   : el2_lockstep_pkg.sv line 17
+  Cause  : el2_lockstep_pkg imports el2_pkg::* but el2_pkg
+           (defined in include/el2_def.sv) was not in filelist
+  Fix    : Added $RV_ROOT/design/include/el2_def.sv before
+           el2_lockstep_pkg.sv in filelist
+
+ERROR 4: Syntax error in el2_param.vh — token 'pt'
+  Cause  : Same root cause as ERROR 3 — el2_param.vh uses
+           el2_param_t type which is defined in el2_pkg.
+           Once el2_def.sv was added, this resolved automatically.
+
+ERROR 5: Source file axi_to_axilite_uart_bridge.v not found
+  Cause  : File is in rtl/bridge/ but filelist had ../rtl/
+  Fix    : Updated all Honours Project file paths to correct subdirs:
+           ../rtl/bridge/axi_to_axilite_uart_bridge.v
+           ../rtl/top/axi_interconnect_uart_top.v
+           ../rtl/top/veer_uart_soc_top.v
+           ../rtl/memory/ifu_rom_stub.v
+
+ERROR 6: Unconnected interface ports el2_icache_export, el2_mem_export
+  File   : el2_veer_wrapper.sv lines 393, 417
+  Cause  : el2_veer_wrapper has two mandatory SystemVerilog interface
+           ports that must be connected — they cannot be left open.
+           These connect the core to DCCM/ICCM/ICache SRAM banks.
+  Fix    : Declared 'el2_mem_if mem_export_iface()' in veer_uart_soc_top.v
+           and connected:
+             .el2_mem_export   (mem_export_iface.veer_sram_src)
+             .el2_icache_export(mem_export_iface.veer_icache_src)
+
+ERROR 7: Undefined ports core_rst_l, po_reset_l
+  File   : veer_uart_soc_top.v instantiation of el2_veer_wrapper
+  Cause  : These ports existed in older VeeR versions but NOT in
+           the cloned version (Cores-VeeR-EL2 latest)
+  Fix    : Removed those port connections from u_veer instantiation
+
+  Additionally found: This version uses AHB (not AXI) for SB and DMA buses.
+  Fix    : Replaced SB/DMA AXI connections with AHB tie-offs.
+           Added new ports: lockstep, shadow trace, DMI, ECC outputs,
+           performance counters — all tied off or left open.
+
+
+## ================================================================
+## SECTION 5 — CURRENT STATUS
+## ================================================================
+
+Last VCS run result: 2 errors remaining (core_rst_l / po_reset_l)
+  → FIXED in latest veer_uart_soc_top.v rewrite
+
+Next step: Re-run VCS with corrected veer_uart_soc_top.v
+  Expected: Compile clean (only warnings, no errors)
+  Then    : Run ./simv_veer_uart to simulate
+
+
+## ================================================================
+## SECTION 6 — HOW TO COMPILE AND RUN
+## ================================================================
+
+# Step 1 — Set environment (csh)
+setenv RV_ROOT /home/student/Documents/1602-23-735-189/Honours_Proj/rtl/Cores-VeeR-EL2
+
+# Step 2 — Go to run directory
+cd /home/student/Documents/1602-23-735-189/Honours_Proj/run
+
+# Step 3 — Compile only (check for errors)
+vcs -full64 -debug_access+all -kdb \
+    -sverilog +define+RV_BUILD_AXI4 \
+    +incdir+$RV_ROOT/design/include \
+    +incdir+$RV_ROOT/configs \
+    +incdir+../rtl/uart/include \
+    -timescale=1ns/1ps \
+    -f run_veer_uart_soc.f \
+    -top tb_veer_uart_soc \
+    -o simv_veer_uart
+
+# Step 4 — Run simulation
+./simv_veer_uart
+
+# Step 5 — Open waveforms in Verdi
+verdi -ssf tb_veer_uart_soc.fsdb &
+
+
+## ================================================================
+## SECTION 7 — ALL NEW FILES CREATED TODAY
+## ================================================================
+
+  File                                          Purpose
+  ─────────────────────────────────────────────────────────────────
+  rtl/top/veer_uart_soc_top.v                   SoC integration top
+  rtl/memory/ifu_rom_stub.v                     AXI4 instruction ROM stub
+  sw/boot.S                                     RISC-V assembly boot program
+  sw/boot.ld                                    Linker script
+  sw/boot.elf                                   Compiled ELF (intermediate)
+  sw/boot.bin                                   Raw binary (intermediate)
+  sw/boot.hex                                   $readmemh hex for ROM stub
+  tb/tb_veer_uart_soc.v                         VCS simulation testbench
+  run/run_veer_uart_soc.f                       VCS filelist
+
+
+## ================================================================
+## SECTION 8 — COMPLETE FILE TREE OF HONOURS_PROJ (after today)
+## ================================================================
+
+Honours_Proj/
+├── rtl/
+│   ├── Cores-VeeR-EL2/          ← cloned VeeR EL2 RISC-V core
+│   ├── bridge/
+│   │   └── axi_to_axilite_uart_bridge.v
+│   ├── interconnect/
+│   │   ├── axi_interconnect(1).v
+│   │   ├── axi_interconnect_wrap_2x8.v
+│   │   ├── arbiter(1).v
+│   │   └── priority_encoder(1).v
+│   ├── uart/
+│   │   ├── axi_uart_top.v
+│   │   ├── uart_controller.v
+│   │   ├── uart_transmitter.v
+│   │   ├── uart_receiver.v
+│   │   ├── axi_internal_fifo.v
+│   │   ├── uart_parity_bit_compute.v
+│   │   └── include/
+│   │       ├── axi_uart.vh
+│   │       └── axi_uart_defines.vh
+│   ├── aes/
+│   ├── top/
+│   │   ├── axi_interconnect_uart_top.v  ← existing
+│   │   └── veer_uart_soc_top.v          ← NEW (SoC top)
+│   └── memory/
+│       └── ifu_rom_stub.v               ← NEW (AXI4 ROM for IFU)
+│
+├── sw/
+│   ├── boot.S                           ← NEW (RISC-V assembly)
+│   ├── boot.ld                          ← NEW (linker script)
+│   ├── boot.elf                         ← NEW (compiled ELF)
+│   ├── boot.bin                         ← NEW (raw binary)
+│   └── boot.hex                         ← NEW ($readmemh hex)
+│
+├── tb/
+│   ├── uart_tb/                         ← existing
+│   ├── interconnect_tb/                 ← existing
+│   ├── aes_tb/                          ← existing
+│   ├── tb_axi_interconnect_uart_top.v   ← existing
+│   └── tb_veer_uart_soc.v               ← NEW (SoC testbench)
+│
+├── run/
+│   ├── run_veer_uart_soc.f              ← NEW (VCS filelist)
+│   └── (existing run artifacts)
+│
+└── Scripts/
+    └── PROJECT_LOG.txt                  ← THIS FILE
