@@ -25,4 +25,24 @@ module ef_util_sync (
 
 endmodule
 
+module ef_util_ped (
+    input  wire clk,
+    input  wire in,
+    output wire out
+);
+    reg in_d;
+    always @(posedge clk) in_d <= in;
+    assign out = in & ~in_d;
+endmodule
+
+module ef_util_ned (
+    input  wire clk,
+    input  wire in,
+    output wire out
+);
+    reg in_d;
+    always @(posedge clk) in_d <= in;
+    assign out = ~in & in_d;
+endmodule
+
 `default_nettype wire
