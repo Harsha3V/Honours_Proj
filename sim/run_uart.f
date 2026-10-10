@@ -26,9 +26,9 @@
 
 // ---------- Testbench files ----------
 // All six testbenches are listed; pick the desired -top on the vcs command line
-../tb/uart_tb/tb_uart_parity_bit_compute.v
-../tb/uart_tb/tb_axi_internal_fifo.v
-../tb/uart_tb/tb_uart_transmitter.v
-../tb/uart_tb/tb_uart_receiver.v
-../tb/uart_tb/tb_uart_controller.v
-../tb/uart_tb/tb_axi_uart_top.v
+../tb/uart/tb_uart_parity_bit_compute.v
+../tb/uart/tb_axi_internal_fifo.v
+../tb/uart/tb_uart_transmitter.v
+../tb/uart/tb_uart_receiver.v
+../tb/uart/tb_uart_controller.v
+../tb/uart/tb_axi_uart_top.v
