@@ -17,6 +17,9 @@
 //       -o simv_aes && ./simv_aes
 // ============================================================
 
+// ---- Include path (needed for `include "timescale.v" inside AES files) ----
++incdir+../rtl/aes
+
 // ---- AES sub-blocks ----
 ../rtl/aes/timescale.v
 ../rtl/aes/aes_rcon.v
