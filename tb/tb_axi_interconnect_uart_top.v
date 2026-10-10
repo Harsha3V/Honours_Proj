@@ -209,6 +209,8 @@ task axi_write;
     input [DATA_WIDTH-1:0]  data;
     integer timeout;
     begin
+        // AXI4 spec: hold awvalid/wvalid asserted until ready is seen.
+        // Assert both simultaneously (required by axi_uart_top).
         @(negedge clk);
         s00_awid    = 8'h01;
         s00_awaddr  = addr;
@@ -226,32 +228,21 @@ task axi_write;
         s00_wvalid  = 1'b1;
         s00_bready  = 1'b1;
 
-        // Wait for AW handshake
+        // Wait for BOTH AW and W handshake (hold valid until ready seen)
         timeout = 0;
         @(posedge clk); #1;
-        while (!s00_awready && timeout < TIMEOUT) begin
+        while (!(s00_awready && s00_wready) && timeout < TIMEOUT) begin
             @(posedge clk); #1;
             timeout = timeout + 1;
         end
         if (timeout >= TIMEOUT)
-            $display("  [TIMEOUT] axi_write AWREADY addr=0x%08h", addr);
+            $display("  [TIMEOUT] axi_write AWREADY/WREADY addr=0x%08h", addr);
 
+        // Deassert both on next negedge after handshake completes
         @(negedge clk);
         s00_awvalid = 1'b0;
-
-        // Wait for W handshake
-        timeout = 0;
-        @(posedge clk); #1;
-        while (!s00_wready && timeout < TIMEOUT) begin
-            @(posedge clk); #1;
-            timeout = timeout + 1;
-        end
-        if (timeout >= TIMEOUT)
-            $display("  [TIMEOUT] axi_write WREADY addr=0x%08h", addr);
-
-        @(negedge clk);
-        s00_wvalid = 1'b0;
-        s00_wlast  = 1'b0;
+        s00_wvalid  = 1'b0;
+        s00_wlast   = 1'b0;
 
         // Wait for B response
         timeout = 0;
