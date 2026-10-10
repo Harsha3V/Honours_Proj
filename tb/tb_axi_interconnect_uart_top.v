@@ -33,12 +33,12 @@ localparam TIMEOUT     = 500;
 
 // UART register addresses (full 32-bit, lower 5 bits select register)
 // These go through the interconnect → bridge → UART
-// UART base address = 0x0000_0000 (M00 of interconnect)
-localparam ADDR_THR_RBR = 32'h0000_0000;  // TX write / RX read
-localparam ADDR_IER     = 32'h0000_0004;  // Interrupt enable
-localparam ADDR_BAUD    = 32'h0000_0008;  // Baud divisor (DLAB=1)
-localparam ADDR_LCR     = 32'h0000_000C;  // Line control
-localparam ADDR_LSR     = 32'h0000_0014;  // Line status
+// UART base address = 0x0300_0000 (M03 of interconnect — FINAL MAP)
+localparam ADDR_THR_RBR = 32'h0300_0000;  // TX write / RX read
+localparam ADDR_IER     = 32'h0300_0004;  // Interrupt enable
+localparam ADDR_BAUD    = 32'h0300_0008;  // Baud divisor (DLAB=1)
+localparam ADDR_LCR     = 32'h0300_000C;  // Line control
+localparam ADDR_LSR     = 32'h0300_0014;  // Line status
 
 // LCR bit positions
 localparam LCR_DLAB = 7;
@@ -95,7 +95,23 @@ reg                      s00_rready;
 // UART serial
 wire                     uart_tx_o;
 reg                      uart_rx_i;
-wire                     uart_interrupt_o;
+wire                     uart_irq_o;
+
+// SPI pins — tie off MISO, monitor outputs
+wire                     spi_clk_o;
+wire                     spi_mosi_o;
+wire                     spi_cs_n_o;
+reg                      spi_miso_i;
+
+// GPIO pins — tie off inputs, monitor outputs
+wire  [7:0]              gpio_out_o;
+wire  [7:0]              gpio_oe_o;
+wire                     gpio_irq_o;
+reg   [7:0]              gpio_in_i;
+
+// Timer — tie off capture input, monitor IRQ
+wire                     timer_irq_o;
+reg                      timer_ctr_in_i;
 
 // Loopback control
 reg                      loopback_en;
@@ -106,60 +122,76 @@ assign #1 uart_rx_i = loopback_en ? uart_tx_o : rx_force;
 // DUT instantiation
 // ====================================================================
 axi_interconnect_uart_top #(
-    .DATA_WIDTH     (DATA_WIDTH),
-    .ADDR_WIDTH     (ADDR_WIDTH),
-    .ID_WIDTH       (ID_WIDTH),
-    .UART_BASE_ADDR (32'h0000_0000),
-    .UART_ADDR_WIDTH(24)
+    .DATA_WIDTH (DATA_WIDTH),
+    .ADDR_WIDTH (ADDR_WIDTH),
+    .ID_WIDTH   (ID_WIDTH)
 ) dut (
-    .clk            (clk),
-    .rstn           (rstn),
+    .clk                (clk),
+    .rstn               (rstn),
 
-    .s00_axi_awid   (s00_awid),
-    .s00_axi_awaddr (s00_awaddr),
-    .s00_axi_awlen  (s00_awlen),
-    .s00_axi_awsize (s00_awsize),
-    .s00_axi_awburst(s00_awburst),
-    .s00_axi_awlock (s00_awlock),
-    .s00_axi_awcache(s00_awcache),
-    .s00_axi_awprot (s00_awprot),
-    .s00_axi_awqos  (s00_awqos),
-    .s00_axi_awvalid(s00_awvalid),
-    .s00_axi_awready(s00_awready),
+    // AXI S00
+    .s00_axi_awid       (s00_awid),
+    .s00_axi_awaddr     (s00_awaddr),
+    .s00_axi_awlen      (s00_awlen),
+    .s00_axi_awsize     (s00_awsize),
+    .s00_axi_awburst    (s00_awburst),
+    .s00_axi_awlock     (s00_awlock),
+    .s00_axi_awcache    (s00_awcache),
+    .s00_axi_awprot     (s00_awprot),
+    .s00_axi_awqos      (s00_awqos),
+    .s00_axi_awvalid    (s00_awvalid),
+    .s00_axi_awready    (s00_awready),
 
-    .s00_axi_wdata  (s00_wdata),
-    .s00_axi_wstrb  (s00_wstrb),
-    .s00_axi_wlast  (s00_wlast),
-    .s00_axi_wvalid (s00_wvalid),
-    .s00_axi_wready (s00_wready),
+    .s00_axi_wdata      (s00_wdata),
+    .s00_axi_wstrb      (s00_wstrb),
+    .s00_axi_wlast      (s00_wlast),
+    .s00_axi_wvalid     (s00_wvalid),
+    .s00_axi_wready     (s00_wready),
 
-    .s00_axi_bid    (s00_bid),
-    .s00_axi_bresp  (s00_bresp),
-    .s00_axi_bvalid (s00_bvalid),
-    .s00_axi_bready (s00_bready),
+    .s00_axi_bid        (s00_bid),
+    .s00_axi_bresp      (s00_bresp),
+    .s00_axi_bvalid     (s00_bvalid),
+    .s00_axi_bready     (s00_bready),
 
-    .s00_axi_arid   (s00_arid),
-    .s00_axi_araddr (s00_araddr),
-    .s00_axi_arlen  (s00_arlen),
-    .s00_axi_arsize (s00_arsize),
-    .s00_axi_arburst(s00_arburst),
-    .s00_axi_arlock (s00_arlock),
-    .s00_axi_arcache(s00_arcache),
-    .s00_axi_arprot (s00_arprot),
-    .s00_axi_arqos  (s00_arqos),
-    .s00_axi_arvalid(s00_arvalid),
-    .s00_axi_arready(s00_arready),
+    .s00_axi_arid       (s00_arid),
+    .s00_axi_araddr     (s00_araddr),
+    .s00_axi_arlen      (s00_arlen),
+    .s00_axi_arsize     (s00_arsize),
+    .s00_axi_arburst    (s00_arburst),
+    .s00_axi_arlock     (s00_arlock),
+    .s00_axi_arcache    (s00_arcache),
+    .s00_axi_arprot     (s00_arprot),
+    .s00_axi_arqos      (s00_arqos),
+    .s00_axi_arvalid    (s00_arvalid),
+    .s00_axi_arready    (s00_arready),
 
-    .s00_axi_rid    (s00_rid),
-    .s00_axi_rdata  (s00_rdata),
-    .s00_axi_rresp  (s00_rresp),
-    .s00_axi_rlast  (s00_rlast),
-    .s00_axi_rvalid (s00_rvalid),
-    .s00_axi_rready (s00_rready),
+    .s00_axi_rid        (s00_rid),
+    .s00_axi_rdata      (s00_rdata),
+    .s00_axi_rresp      (s00_rresp),
+    .s00_axi_rlast      (s00_rlast),
+    .s00_axi_rvalid     (s00_rvalid),
+    .s00_axi_rready     (s00_rready),
 
-    .uart_rx_i      (uart_rx_i),
-    .uart_tx_o      (uart_tx_o),
-    .uart_interrupt_o(uart_interrupt_o)
+    // UART (M03 — 0x0300_0000)
+    .uart_rx_i          (uart_rx_i),
+    .uart_tx_o          (uart_tx_o),
+    .uart_irq_o         (uart_irq_o),
+
+    // SPI (M02 — 0x0200_0000) — MISO tied low
+    .spi_clk_o          (spi_clk_o),
+    .spi_mosi_o         (spi_mosi_o),
+    .spi_miso_i         (spi_miso_i),
+    .spi_cs_n_o         (spi_cs_n_o),
+
+    // GPIO (M05 — 0x0500_0000) — inputs tied zero
+    .gpio_in_i          (gpio_in_i),
+    .gpio_out_o         (gpio_out_o),
+    .gpio_oe_o          (gpio_oe_o),
+    .gpio_irq_o         (gpio_irq_o),
+
+    // Timer (M04 — 0x0400_0000) — capture input tied zero
+    .timer_ctr_in_i     (timer_ctr_in_i),
+    .timer_irq_o        (timer_irq_o)
 );
 
 // ====================================================================
@@ -362,6 +394,9 @@ initial begin
     rstn        = 1'b0;
     loopback_en = 1'b0;
     rx_force    = 1'b1;     // idle HIGH
+    spi_miso_i      = 1'b0;
+    gpio_in_i       = 8'h00;
+    timer_ctr_in_i  = 1'b0;
 
     s00_awvalid = 0; s00_awaddr = 0; s00_awid = 0;
     s00_wvalid  = 0; s00_wdata  = 0; s00_wstrb = 4'hF;
@@ -386,7 +421,7 @@ initial begin
     check(uart_tx_o,        1, "uart_tx_o=1 during reset (idle)");
     check(s00_rvalid,       0, "rvalid=0 during reset");
     check(s00_bvalid,       0, "bvalid=0 during reset");
-    check(uart_interrupt_o, 0, "interrupt=0 during reset");
+    check(uart_irq_o,       0, "interrupt=0 during reset");
 
     // Release reset
     rstn = 1'b1;
@@ -401,7 +436,7 @@ initial begin
     //   Step 3: Write LCR with DLAB=0  → lock baud register
     // ------------------------------------------------------------
     $display("\n--- TC2: Configure UART (LCR + baud divisor) ---");
-    $display("  INFO  Path: TB → Interconnect S00 → M00 → Bridge → UART");
+    $display("  INFO  Path: TB → Interconnect S00 → M03 → Bridge → UART");
 
     // Set DLAB=1
     axi_write(ADDR_LCR, 32'h1 << LCR_DLAB);
@@ -454,7 +489,7 @@ initial begin
     drive_rx_frame(8'h42);
     repeat(20) @(posedge clk);
     // Check interrupt fired
-    check(uart_interrupt_o, 1, "read_interrupt_o=1 after RX byte");
+    check(uart_irq_o, 1, "uart_irq_o=1 after RX byte");
     // Read RBR via interconnect
     axi_read(ADDR_THR_RBR, rd_data);
     check(rd_data[7:0], 8'h42, "RBR = 0x42 (B) via interconnect");
@@ -481,9 +516,9 @@ initial begin
     // TC8: Unknown address write — bus must not hang
     // ------------------------------------------------------------
     $display("\n--- TC8: Unknown address write (no hang check) ---");
-    // Address 0x0200_0000 maps to M02 which is tied off with ready=1
-    axi_write(32'h0200_0000, 32'hDEADBEEF);
-    $display("  INFO  Write to unused slave (M02) completed without hang");
+    // 0x0600_0000 = M06 which is tied off — should return DECERR without hang
+    axi_write(32'h0600_0000, 32'hDEADBEEF);
+    $display("  INFO  Write to tied-off slave (M06=0x0600_0000) completed without hang");
 
     // ------------------------------------------------------------
     // Summary
