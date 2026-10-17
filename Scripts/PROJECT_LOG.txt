@@ -703,3 +703,190 @@ STEP 3 — Temp clone cleanup (safe to run anytime)
   4. Wire DMA into SoC top
 
 ## ================================================================
+
+
+## ================================================================
+## SECTION 11 — FULL SOC RTL INTEGRATION & FIRMWARE PREPARATION
+## Date: 2026-10-17
+## Author: Antigravity Agent
+## ================================================================
+
+----------------------------------------------------------------
+11.1 — SUMMARY OF COMPLETED TASKS
+----------------------------------------------------------------
+  1. AXI SRAM 64 KB Created (rtl/memory/axi_sram.v):
+     - Single-cycle 32-bit synchronous memory (16384 words = 64 KB).
+     - Mapped at AXI base address 0x0600_0000 (M06).
+     - Full INCR burst support with byte write strobes.
+     - Acts as staging buffer for DMA and CPU.
+
+  2. DMA Macro Incompatibility Resolved:
+     - The upstream submodule rggen-verilog-rtl had updated rggen_slice to 4 arguments,
+       causing csr_dma.v compile failures (expected 3 args: EXPRESSION, WIDTH, INDEX).
+     - Restored matching commit 2ac0648d0aa0414c525365123d143bc9908b7f19.
+     - Verified: sim/run_dma.f compiles cleanly with 0 errors.
+
+  3. Interconnect Subsystem Enhanced (rtl/top/axi_interconnect_uart_top.v):
+     - Integrated dma_axi_flat_wrapper as S01 Master and M01 Slave.
+     - Connected AXI SRAM as M06 Slave.
+     - Updated crossbar routing matrix:
+         S00 (CPU): Can access all peripherals (M00-M06).
+         S01 (DMA): Can access AES (M00), SPI (M02), UART (M03), SRAM (M06).
+                    Prevented from accessing DMA CSR (M01), Timer (M04), GPIO (M05).
+     - Exposed dma_done_o and dma_error_o interrupt signals.
+
+  4. Full SoC Top Module Created (rtl/soc_top/soc_top.v):
+     - Instantiated VeeR EL2 core (el2_veer_wrapper) with +define+RV_BUILD_AXI4.
+     - Connected 64-bit IFU AXI bus to Boot ROM stub (ifu_rom_stub.v) at 0x8000_0000.
+     - Implemented 64-to-32 bit LSU width adapter to bridge CPU to interconnect.
+     - Connected interconnect top (u_periph_top) on S00.
+     - Wired external interrupt vector bus extintsrc_req[31:1]:
+         IRQ 1 : Timer heartbeat (timer_irq_o)
+         IRQ 2 : UART RX data ready (uart_irq_o)
+         IRQ 3 : GPIO trigger (gpio_irq_o)
+         IRQ 4 : DMA done (dma_done_o)
+         IRQ 5 : DMA error (dma_error_o)
+
+  5. Synopsys VCS Full Elaboration Verified:
+     - Created unified filelist sim/run_soc.f.
+     - Executed:
+         vcs -full64 -sverilog +define+RV_BUILD_AXI4 \
+             +incdir+../rtl/Cores-VeeR-EL2/design/include \
+             +incdir+../rtl/interconnect +incdir+../rtl/dma \
+             +incdir+../rtl/dma/bus_arch_sv_pkg +incdir+../rtl/dma/rggen-verilog-rtl \
+             -f run_soc.f -top soc_top -o simv_soc_check
+     - RESULT: 69 modules elaborated with 0 ERRORS and 0 WARNINGS.
+
+  6. Complete C Software Stack Prepared:
+     - sw/app/soc_regs.h : Register offsets and driver API for all 7 blocks.
+     - sw/app/main.c     : AUTOSAR SecOC Gateway application (UART diagnostics,
+                           SRAM staging, AES-128 encryption, SPI CAN frame TX).
+     - sw/boot.S         : Reset vector handler, stack pointer setup at 0xF004_FFFC,
+                           .data copy, .bss clear, interrupt enable, jump to main.
+     - sw/boot.ld        : Linker script mapping ROM (0x80000000), DCCM (0xF0040000),
+                           and SRAM (0x06000000).
+
+  7. Documentation Generated:
+     - Created docs/SOC_INTEGRATION_REPORT.md with complete architectural diagrams,
+       memory maps, register details, and compilation evidence.
+
+----------------------------------------------------------------
+11.2 — CURRENT STATUS TABLE
+----------------------------------------------------------------
+  ┌─────────────────────────────────────────┬──────────────────────────────────┐
+  │ Item                                    │ Status                           │
+  ├─────────────────────────────────────────┼──────────────────────────────────┤
+  │ rtl/memory/axi_sram.v                   │ ✅ Complete & Verified           │
+  │ rtl/dma/rggen-verilog-rtl fix           │ ✅ Complete & Verified           │
+  │ rtl/top/axi_interconnect_uart_top.v     │ ✅ Complete & Verified           │
+  │ rtl/soc_top/soc_top.v                   │ ✅ Complete & Elaborated (0 err) │
+  │ sim/run_soc.f                           │ ✅ Complete & Verified           │
+  │ sw/app/soc_regs.h                       │ ✅ Complete                      │
+  │ sw/app/main.c                           │ ✅ Complete                      │
+  │ sw/boot.S                               │ ✅ Complete                      │
+  │ sw/boot.ld                              │ ✅ Complete                      │
+  │ docs/SOC_INTEGRATION_REPORT.md          │ ✅ Complete                      │
+  ├─────────────────────────────────────────┼──────────────────────────────────┤
+  │ RISC-V GCC compile (sw -> boot.hex)     │ ⏳ Next Task                     │
+  │ tb/soc/tb_soc_top.v (Full SoC TB)       │ ⏳ Next Task                     │
+  │ End-to-end SoC VCS simulation           │ ⏳ Next Task                     │
+  └─────────────────────────────────────────┴──────────────────────────────────┘
+
+----------------------------------------------------------------
+11.3 — NEXT IMMEDIATE STEPS
+----------------------------------------------------------------
+  1. Compile C firmware with riscv64-unknown-elf-gcc / riscv32-unknown-elf-gcc:
+       Compile sw/boot.S + sw/app/main.c with sw/boot.ld -> boot.elf
+       objcopy -> boot.hex
+  2. Create testbench tb/soc/tb_soc_top.v:
+       Instantiate soc_top, load boot.hex into ifu_rom_stub, drive clk/rstn,
+       monitor UART TX output and SPI MOSI CAN frames.
+  3. Run VCS full simulation and record waveforms in Verdi/DVE.
+
+## ================================================================
+
+## ================================================================
+## SECTION 12 — HARDWARE/SOFTWARE CO-SIMULATION SUCCESS & TEST PLAN
+## Date: 2026-10-17
+## Author: Antigravity Agent & Student
+## ================================================================
+
+----------------------------------------------------------------
+12.1 — SUMMARY OF COMPLETED TASKS
+----------------------------------------------------------------
+  1. RISC-V GCC C Firmware Build Pipeline:
+     - Configured riscv-none-elf-gcc toolchain.
+     - Created sw/compile_app.sh and test_c/run_c_test.sh.
+     - Automates compilation of sw/boot.S and sw/app/main.c into
+       boot.elf, boot.dump, boot.bin, and 32-bit word boot.hex (4096 words).
+     - Auto-synchronizes boot.hex to sim/ and test_sv/.
+
+  2. Dedicated Test Directories Created:
+     - test_c/  : Contains run_c_test.sh, Makefile, and README.md.
+     - test_sv/ : Contains run_sv_test.sh, Makefile, and README.md.
+     - Top-level Makefile updated with 'make c_test' and 'make sv_test'.
+
+  3. SystemVerilog Full SoC Testbench (tb/soc/tb_soc_top.v):
+     - Instantiated soc_top with 100 MHz clock and reset sequencer.
+     - Implemented real-time 115,200 baud UART RX monitor printing characters.
+     - Implemented SPI Master monitor sniffing MOSI ciphertext bytes.
+     - Implemented GPIO LED status transition tracker.
+
+  4. RTL & Hardware Bugs Diagnosed and Fixed:
+     - Bug 1 (Interconnect Deadlock): Port M02 (spi_axi_top) lacked RLAST signal.
+       Added 'assign m02_rlast = 1'b1;' in rtl/top/axi_interconnect_uart_top.v (L733).
+     - Bug 2 (SPI Address Latching): Concurrently asserted s_axi_awvalid and
+       s_axi_wvalid resulted in stale register addresses. Implemented eff_wr_addr
+       multiplexer in rtl/spi/spi_axi_top.v (L155-L175).
+     - Bug 3 (VeeR EL2 DCCM Stack Aliasing): Core LSU address checker flagged
+       stack pointer aliases on peripheral reads. Directly loaded AES_TEXTOUT
+       into CPU register variables in sw/app/main.c (L77-L115).
+     - Bug 4 (VeeR EL2 Cache Region): MRAC CSR 0x7C0 initialized with 0x00000002
+       in sw/boot.S to configure Region 0 (0x0000_0000-0x0FFF_FFFF) as non-cacheable
+       side-effect I/O.
+
+  5. Full VCS Simulation Execution (100% PASS):
+     - VCS command: ./test_sv/run_sv_test.sh
+     - All 7 AUTOSAR SecOC Phases executed:
+         Phase 1: Boot & UART banner ("=== Honours Project ===")
+         Phase 2: AES-128 key loading (0x16157e2b, 0xa6d2ae28, 0x8815f7ab, 0x3c4fcf09)
+         Phase 3: ECU plaintext staged in AXI SRAM (0xa8f64332...)
+         Phase 4: Autonomous hardware AES encryption (~10 cycles)
+         Phase 5: NIST ciphertext verified (0x9448FE5E7C88F20F16431804FA8DB16A)
+         Phase 6: 16 ciphertext bytes dispatched over SPI Master to MCP2515 CAN controller
+         Phase 7: GPIO LED transitions (0x01 -> 0x03 -> 0x07 -> 0x05)
+     - SIMULATION SUCCESS logged at 70,680,235,000 ps (70.68 ms).
+
+  6. Formal Verification Test Plan Generated (soc_test_plan.xlsx):
+     - Created Excel test plan adhering to required schema:
+       Serial No. | Test Name | Description | Check Point | C Portion | SV Portion
+     - Stored at soc_test_plan.xlsx and docs/soc_test_plan.xlsx.
+     - Documented all 16 test cases covering boot, CSRs, UART, GPIO, AES, SRAM, SPI,
+       AXI crossbar, and end-to-end integration.
+
+----------------------------------------------------------------
+12.2 — FINAL SYSTEM STATUS TABLE
+----------------------------------------------------------------
+  ┌─────────────────────────────────────────┬──────────────────────────────────┐
+  │ Item                                    │ Status                           │
+  ├─────────────────────────────────────────┼──────────────────────────────────┤
+  │ rtl/memory/axi_sram.v                   │ ✅ Complete & Verified           │
+  │ rtl/dma/rggen-verilog-rtl fix           │ ✅ Complete & Verified           │
+  │ rtl/top/axi_interconnect_uart_top.v     │ ✅ Complete & Verified (m02_rlast)│
+  │ rtl/spi/spi_axi_top.v                   │ ✅ Complete & Verified (addr mux)│
+  │ rtl/soc_top/soc_top.v                   │ ✅ Complete & Elaborated (0 err) │
+  │ sim/run_soc.f                           │ ✅ Complete & Verified           │
+  │ sw/app/soc_regs.h                       │ ✅ Complete                      │
+  │ sw/app/main.c                           │ ✅ Complete & Verified           │
+  │ sw/boot.S                               │ ✅ Complete (MRAC CSR added)     │
+  │ sw/boot.ld                              │ ✅ Complete                      │
+  │ docs/SOC_INTEGRATION_REPORT.md          │ ✅ Complete                      │
+  │ RISC-V GCC compile (sw -> boot.hex)     │ ✅ Complete & Automated          │
+  │ tb/soc/tb_soc_top.v (Full SoC TB)       │ ✅ Complete with UART/SPI sniffer│
+  │ End-to-end SoC VCS simulation           │ ✅ Complete (100% PASS, 70.68 ms)│
+  │ Standalone test suites (test_c, test_sv)│ ✅ Complete & Verified           │
+  │ Formal Test Plan (soc_test_plan.xlsx)   │ ✅ Complete (16 Test Cases)      │
+  │ Session Record (project_text.md)        │ ✅ Complete                      │
+  └─────────────────────────────────────────┴──────────────────────────────────┘
+
+## ================================================================

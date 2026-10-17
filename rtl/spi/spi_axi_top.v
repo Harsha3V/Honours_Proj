@@ -155,7 +155,7 @@ always @(posedge clk or negedge rstn) begin
 
         if (s_axi_wvalid && !s_axi_wready) begin
             s_axi_wready <= 1'b1;
-            case (wr_addr[4:0])
+            case ((s_axi_awvalid && !s_axi_awready) ? s_axi_awaddr[4:0] : wr_addr[4:0])
                 TX_DATA_ADDR: begin
                     if (s_axi_wstrb[0]) begin
                         tx_data_reg <= s_axi_wdata[7:0];
@@ -171,7 +171,7 @@ always @(posedge clk or negedge rstn) begin
 
             s_axi_bvalid <= 1'b1;
             s_axi_bresp  <= 2'b00;
-            s_axi_bid    <= wr_id;
+            s_axi_bid    <= (s_axi_awvalid && !s_axi_awready) ? s_axi_awid : wr_id;
         end
 
         if (s_axi_bvalid && s_axi_bready)

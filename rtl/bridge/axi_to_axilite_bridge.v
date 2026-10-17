@@ -122,18 +122,27 @@ module axi_to_axilite_uart_bridge #(
 // WRITE PATH
 // ====================================================================
 //
-//  State machine:
-//  IDLE → accept AW → forward to UART → accept W → forward to UART
-//       → wait B from UART → forward B to master → back to IDLE
+//  axi_uart_top behaviour:
+//    - Requires awvalid AND wvalid simultaneously (axi_wren = awvalid & wvalid)
+//    - Sets awready_d, wready_d, bvalid_d on the SAME clock cycle as request
+//      (registered, so they appear one clock after awvalid+wvalid are seen)
+//    - axi_bvalid_o is GATED by axi_wren — only visible while awvalid+wvalid held
+//
+//  Therefore the bridge MUST:
+//    - Hold awvalid+wvalid asserted until bvalid arrives
+//    - Capture awready+wready+bvalid all in a single cycle
+//
+//  State machine (2 states only):
+//    WR_IDLE — latch AW+W when both valid; handshake awready/wready to master
+//    WR_SEND — hold awvalid+wvalid to UART until awready+wready+bvalid
+//              arrive together; then assert bvalid to master, return to IDLE
 //
 // ====================================================================
 
-localparam WR_IDLE    = 2'b00;
-localparam WR_ADDR    = 2'b01;  // waiting for UART awready
-localparam WR_DATA    = 2'b10;  // waiting for UART wready
-localparam WR_RESP    = 2'b11;  // waiting for UART bvalid
+localparam WR_IDLE = 1'b0;
+localparam WR_SEND = 1'b1;  // holding AW+W to UART, waiting for accept + bvalid
 
-reg [1:0]                  wr_state, wr_state_d;
+reg                        wr_state, wr_state_d;
 reg [AXI_ID_WIDTH-1:0]     wr_id,    wr_id_d;
 reg [LITE_ADDR_WIDTH-1:0]  wr_addr,  wr_addr_d;
 reg [AXI_DATA_WIDTH-1:0]   wr_data,  wr_data_d;
@@ -154,34 +163,21 @@ always @(*) begin
     case (wr_state)
         WR_IDLE: begin
             wr_bvalid_d = 1'b0;
-            if (s_axi_awvalid) begin
-                // Latch address and ID
+            if (s_axi_awvalid && s_axi_wvalid) begin
+                // Latch both AW and W channels simultaneously
                 wr_id_d    = s_axi_awid;
-                wr_addr_d  = s_axi_awaddr[LITE_ADDR_WIDTH-1:0]; // truncate to 5 bits
-                wr_state_d = WR_ADDR;
+                wr_addr_d  = s_axi_awaddr[LITE_ADDR_WIDTH-1:0];
+                wr_data_d  = s_axi_wdata;
+                wr_strb_d  = s_axi_wstrb;
+                wr_state_d = WR_SEND;
             end
         end
 
-        WR_ADDR: begin
-            // Hold AW until UART accepts it
-            if (m_axi_awready) begin
-                wr_state_d = WR_DATA;
-            end
-        end
-
-        WR_DATA: begin
-            if (s_axi_wvalid) begin
-                wr_data_d = s_axi_wdata;
-                wr_strb_d = s_axi_wstrb;
-                if (m_axi_wready) begin
-                    // Both UART ready and master providing data
-                    wr_state_d = WR_RESP;
-                end
-            end
-        end
-
-        WR_RESP: begin
-            if (m_axi_bvalid) begin
+        WR_SEND: begin
+            // UART asserts awready+wready+bvalid all on the same cycle.
+            // bvalid_o is gated by (awvalid & wvalid) so we must stay in
+            // WR_SEND (keeping awvalid+wvalid asserted) until all three arrive.
+            if (m_axi_awready && m_axi_wready && m_axi_bvalid) begin
                 wr_bresp_d  = m_axi_bresp;
                 wr_bvalid_d = 1'b1;
                 wr_state_d  = WR_IDLE;
@@ -191,7 +187,7 @@ always @(*) begin
         default: wr_state_d = WR_IDLE;
     endcase
 
-    // Clear bvalid when master accepts response
+    // Clear bvalid when master accepts B response
     if (wr_bvalid && s_axi_bready)
         wr_bvalid_d = 1'b0;
 end
@@ -218,24 +214,25 @@ always @(posedge clk or negedge rstn) begin
 end
 
 // Write channel output assignments
-assign s_axi_awready = (wr_state == WR_IDLE) && s_axi_awvalid;
-assign s_axi_wready  = (wr_state == WR_DATA) && m_axi_wready;
+// awready/wready fire in WR_IDLE when both valid arrive (handshake on entry)
+assign s_axi_awready = (wr_state == WR_IDLE) && s_axi_awvalid && s_axi_wvalid;
+assign s_axi_wready  = (wr_state == WR_IDLE) && s_axi_awvalid && s_axi_wvalid;
 assign s_axi_bid     = wr_id;
 assign s_axi_bresp   = wr_bresp;
 assign s_axi_bvalid  = wr_bvalid;
 
-// To UART AW channel
-assign m_axi_awid    = {{(LITE_ID_WIDTH-AXI_ID_WIDTH){1'b0}}, wr_id};  // zero-extend 8→12
+// To UART AW channel — held asserted throughout WR_SEND so bvalid_o is ungated
+assign m_axi_awid    = {{(LITE_ID_WIDTH-AXI_ID_WIDTH){1'b0}}, wr_id};
 assign m_axi_awaddr  = wr_addr;
-assign m_axi_awvalid = (wr_state == WR_ADDR);
+assign m_axi_awvalid = (wr_state == WR_SEND);
 
-// To UART W channel
-assign m_axi_wdata   = (wr_state == WR_DATA) ? s_axi_wdata : wr_data;
-assign m_axi_wstrb   = (wr_state == WR_DATA) ? s_axi_wstrb : wr_strb;
-assign m_axi_wvalid  = (wr_state == WR_DATA) && s_axi_wvalid;
+// To UART W channel — held alongside AW
+assign m_axi_wdata   = wr_data;
+assign m_axi_wstrb   = wr_strb;
+assign m_axi_wvalid  = (wr_state == WR_SEND);
 
-// Accept B from UART
-assign m_axi_bready  = (wr_state == WR_RESP);
+// Accept B from UART — keep bready high in WR_SEND so UART can deassert bvalid
+assign m_axi_bready  = (wr_state == WR_SEND);
 
 
 // ====================================================================
@@ -332,10 +329,10 @@ assign s_axi_rresp   = rd_rresp;
 assign s_axi_rlast   = 1'b1;          // always 1 — AXI4-Lite = single beat
 assign s_axi_rvalid  = rd_rvalid;
 
-// To UART AR channel
+// To UART AR channel — held asserted throughout RD_ADDR and RD_DATA so rvalid_o is ungated
 assign m_axi_arid    = {{(LITE_ID_WIDTH-AXI_ID_WIDTH){1'b0}}, rd_id};  // zero-extend 8→12
 assign m_axi_araddr  = rd_addr;
-assign m_axi_arvalid = (rd_state == RD_ADDR);
+assign m_axi_arvalid = (rd_state == RD_ADDR) || (rd_state == RD_DATA);
 
 // Accept R from UART
 assign m_axi_rready  = (rd_state == RD_DATA);

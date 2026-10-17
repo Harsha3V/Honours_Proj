@@ -4,18 +4,18 @@
  * Description    : Integration top-level — AXI4 interconnect + all 6 IPs
  *
  * FINAL Address Map:
- *   M00 = 0x0000_0000  AES-128 Engine       ✅ Connected
- *   M01 = 0x0100_0000  DMA Controller CSR   ⚠ Tied off (flat wrapper pending)
- *   M02 = 0x0200_0000  SPI Master           ✅ Connected
- *   M03 = 0x0300_0000  UART                 ✅ Connected
- *   M04 = 0x0400_0000  Timer (EF_TCC32)     ✅ Connected
- *   M05 = 0x0500_0000  GPIO (EF_GPIO8)      ✅ Connected
- *   M06 = 0x0600_0000  Tied off
+ *   M00 = 0x0000_0000  AES-128 Engine       ✅ Connected (CPU + DMA)
+ *   M01 = 0x0100_0000  DMA Controller CSR   ✅ Connected (CPU only)
+ *   M02 = 0x0200_0000  SPI Master           ✅ Connected (CPU + DMA)
+ *   M03 = 0x0300_0000  UART                 ✅ Connected (CPU + DMA)
+ *   M04 = 0x0400_0000  Timer (EF_TCC32)     ✅ Connected (CPU only)
+ *   M05 = 0x0500_0000  GPIO (EF_GPIO8)      ✅ Connected (CPU only)
+ *   M06 = 0x0600_0000  AXI SRAM (64 KB)     ✅ Connected (CPU + DMA)
  *   M07 = 0x0700_0000  Tied off
  *
  * Masters:
  *   S00 = VeeR EL2 CPU (LSU AXI4)
- *   S01 = DMA AXI4 master (tied off — flat wrapper pending)
+ *   S01 = DMA Controller AXI4 Master (dma_axi_flat_wrapper)
  *
  * Bridges used:
  *   AES   : axi_to_axilite_aes_bridge   (LITE_ADDR_WIDTH=7,  no ID on AES_AXI)
@@ -105,7 +105,13 @@ module axi_interconnect_uart_top #(
     // Timer external
     // ----------------------------------------------------------------
     input  wire         timer_ctr_in_i,
-    output wire         timer_irq_o
+    output wire         timer_irq_o,
+
+    // ----------------------------------------------------------------
+    // DMA status interrupts
+    // ----------------------------------------------------------------
+    output wire         dma_done_o,
+    output wire         dma_error_o
 );
 
 // ====================================================================
@@ -240,6 +246,91 @@ wire [DATA_WIDTH-1:0] m05_rdata;  wire [1:0]            m05_rresp;
 wire                  m05_rlast;  wire                  m05_rvalid;
 wire                  m05_rready;
 
+// ---- M01: DMA CSR ----
+wire [ID_WIDTH-1:0]   m01_awid;   wire [ADDR_WIDTH-1:0] m01_awaddr;
+wire [7:0]            m01_awlen;  wire [2:0]            m01_awsize;
+wire [1:0]            m01_awburst;wire                  m01_awlock;
+wire [3:0]            m01_awcache;wire [2:0]            m01_awprot;
+wire [3:0]            m01_awqos;  wire [3:0]            m01_awregion;
+wire                  m01_awvalid;wire                  m01_awready;
+wire [DATA_WIDTH-1:0] m01_wdata;  wire [STRB_WIDTH-1:0] m01_wstrb;
+wire                  m01_wlast;  wire                  m01_wvalid;
+wire                  m01_wready; wire [ID_WIDTH-1:0]   m01_bid;
+wire [1:0]            m01_bresp;  wire                  m01_bvalid;
+wire                  m01_bready; wire [ID_WIDTH-1:0]   m01_arid;
+wire [ADDR_WIDTH-1:0] m01_araddr; wire [7:0]            m01_arlen;
+wire [2:0]            m01_arsize; wire [1:0]            m01_arburst;
+wire                  m01_arlock; wire [3:0]            m01_arcache;
+wire [2:0]            m01_arprot; wire [3:0]            m01_arqos;
+wire [3:0]            m01_arregion;wire                 m01_arvalid;
+wire                  m01_arready;wire [ID_WIDTH-1:0]   m01_rid;
+wire [DATA_WIDTH-1:0] m01_rdata;  wire [1:0]            m01_rresp;
+wire                  m01_rlast;  wire                  m01_rvalid;
+wire                  m01_rready;
+
+// ---- M06: AXI SRAM ----
+wire [ID_WIDTH-1:0]   m06_awid;   wire [ADDR_WIDTH-1:0] m06_awaddr;
+wire [7:0]            m06_awlen;  wire [2:0]            m06_awsize;
+wire [1:0]            m06_awburst;wire                  m06_awlock;
+wire [3:0]            m06_awcache;wire [2:0]            m06_awprot;
+wire [3:0]            m06_awqos;  wire [3:0]            m06_awregion;
+wire                  m06_awvalid;wire                  m06_awready;
+wire [DATA_WIDTH-1:0] m06_wdata;  wire [STRB_WIDTH-1:0] m06_wstrb;
+wire                  m06_wlast;  wire                  m06_wvalid;
+wire                  m06_wready; wire [ID_WIDTH-1:0]   m06_bid;
+wire [1:0]            m06_bresp;  wire                  m06_bvalid;
+wire                  m06_bready; wire [ID_WIDTH-1:0]   m06_arid;
+wire [ADDR_WIDTH-1:0] m06_araddr; wire [7:0]            m06_arlen;
+wire [2:0]            m06_arsize; wire [1:0]            m06_arburst;
+wire                  m06_arlock; wire [3:0]            m06_arcache;
+wire [2:0]            m06_arprot; wire [3:0]            m06_arqos;
+wire [3:0]            m06_arregion;wire                 m06_arvalid;
+wire                  m06_arready;wire [ID_WIDTH-1:0]   m06_rid;
+wire [DATA_WIDTH-1:0] m06_rdata;  wire [1:0]            m06_rresp;
+wire                  m06_rlast;  wire                  m06_rvalid;
+wire                  m06_rready;
+
+// ---- S01: DMA Master Wires ----
+wire [ID_WIDTH-1:0]   s01_axi_awid;
+wire [ADDR_WIDTH-1:0] s01_axi_awaddr;
+wire [7:0]            s01_axi_awlen;
+wire [2:0]            s01_axi_awsize;
+wire [1:0]            s01_axi_awburst;
+wire                  s01_axi_awlock;
+wire [3:0]            s01_axi_awcache;
+wire [2:0]            s01_axi_awprot;
+wire [3:0]            s01_axi_awqos;
+wire [3:0]            s01_axi_awregion;
+wire                  s01_axi_awvalid;
+wire                  s01_axi_awready;
+wire [DATA_WIDTH-1:0] s01_axi_wdata;
+wire [STRB_WIDTH-1:0] s01_axi_wstrb;
+wire                  s01_axi_wlast;
+wire                  s01_axi_wvalid;
+wire                  s01_axi_wready;
+wire [ID_WIDTH-1:0]   s01_axi_bid;
+wire [1:0]            s01_axi_bresp;
+wire                  s01_axi_bvalid;
+wire                  s01_axi_bready;
+wire [ID_WIDTH-1:0]   s01_axi_arid;
+wire [ADDR_WIDTH-1:0] s01_axi_araddr;
+wire [7:0]            s01_axi_arlen;
+wire [2:0]            s01_axi_arsize;
+wire [1:0]            s01_axi_arburst;
+wire                  s01_axi_arlock;
+wire [3:0]            s01_axi_arcache;
+wire [2:0]            s01_axi_arprot;
+wire [3:0]            s01_axi_arqos;
+wire [3:0]            s01_axi_arregion;
+wire                  s01_axi_arvalid;
+wire                  s01_axi_arready;
+wire [ID_WIDTH-1:0]   s01_axi_rid;
+wire [DATA_WIDTH-1:0] s01_axi_rdata;
+wire [1:0]            s01_axi_rresp;
+wire                  s01_axi_rlast;
+wire                  s01_axi_rvalid;
+wire                  s01_axi_rready;
+
 // ====================================================================
 // AES Bridge → AES slave wires (AES_AXI has NO ID ports)
 // ====================================================================
@@ -295,27 +386,28 @@ axi_interconnect_wrap_2x8 #(
     .BUSER_ENABLE      (0), .ARUSER_ENABLE(0), .RUSER_ENABLE(0),
     .FORWARD_ID        (0),
     .M_REGIONS         (1),
-    // M00 = AES at 0x0000_0000
+    // M00 = AES at 0x0000_0000 (CPU + DMA)
     .M00_BASE_ADDR     (32'h0000_0000), .M00_ADDR_WIDTH({1{32'd24}}),
-    .M00_CONNECT_READ  (2'b01),         .M00_CONNECT_WRITE(2'b01),
-    // M01 = DMA CSR at 0x0100_0000 — tied off (flat wrapper pending)
+    .M00_CONNECT_READ  (2'b11),         .M00_CONNECT_WRITE(2'b11),
+    // M01 = DMA CSR at 0x0100_0000 (CPU only)
     .M01_BASE_ADDR     (32'h0100_0000), .M01_ADDR_WIDTH({1{32'd24}}),
-    .M01_CONNECT_READ  (2'b00),         .M01_CONNECT_WRITE(2'b00),
-    // M02 = SPI at 0x0200_0000
+    .M01_CONNECT_READ  (2'b01),         .M01_CONNECT_WRITE(2'b01),
+    // M02 = SPI at 0x0200_0000 (CPU + DMA)
     .M02_BASE_ADDR     (32'h0200_0000), .M02_ADDR_WIDTH({1{32'd24}}),
-    .M02_CONNECT_READ  (2'b01),         .M02_CONNECT_WRITE(2'b01),
-    // M03 = UART at 0x0300_0000
+    .M02_CONNECT_READ  (2'b11),         .M02_CONNECT_WRITE(2'b11),
+    // M03 = UART at 0x0300_0000 (CPU + DMA)
     .M03_BASE_ADDR     (32'h0300_0000), .M03_ADDR_WIDTH({1{32'd24}}),
-    .M03_CONNECT_READ  (2'b01),         .M03_CONNECT_WRITE(2'b01),
-    // M04 = Timer at 0x0400_0000
+    .M03_CONNECT_READ  (2'b11),         .M03_CONNECT_WRITE(2'b11),
+    // M04 = Timer at 0x0400_0000 (CPU only)
     .M04_BASE_ADDR     (32'h0400_0000), .M04_ADDR_WIDTH({1{32'd24}}),
     .M04_CONNECT_READ  (2'b01),         .M04_CONNECT_WRITE(2'b01),
-    // M05 = GPIO at 0x0500_0000
+    // M05 = GPIO at 0x0500_0000 (CPU only)
     .M05_BASE_ADDR     (32'h0500_0000), .M05_ADDR_WIDTH({1{32'd24}}),
     .M05_CONNECT_READ  (2'b01),         .M05_CONNECT_WRITE(2'b01),
-    // M06 / M07 tied off
+    // M06 = AXI SRAM Staging Memory (64 KB) at 0x0600_0000 (CPU + DMA)
     .M06_BASE_ADDR     (32'h0600_0000), .M06_ADDR_WIDTH({1{32'd24}}),
-    .M06_CONNECT_READ  (2'b00),         .M06_CONNECT_WRITE(2'b00),
+    .M06_CONNECT_READ  (2'b11),         .M06_CONNECT_WRITE(2'b11),
+    // M07 tied off
     .M07_BASE_ADDR     (32'h0700_0000), .M07_ADDR_WIDTH({1{32'd24}}),
     .M07_CONNECT_READ  (2'b00),         .M07_CONNECT_WRITE(2'b00)
 ) u_interconnect (
@@ -345,27 +437,29 @@ axi_interconnect_wrap_2x8 #(
     .s00_axi_ruser(), .s00_axi_rvalid(s00_axi_rvalid),
     .s00_axi_rready(s00_axi_rready),
 
-    // ---- S01: DMA master (tied off) ----
-    .s01_axi_awid(toff_id), .s01_axi_awaddr(toff_addr),
-    .s01_axi_awlen(toff_len), .s01_axi_awsize(toff_size),
-    .s01_axi_awburst(toff_burst), .s01_axi_awlock(1'b0),
-    .s01_axi_awcache(4'h0), .s01_axi_awprot(3'h0),
-    .s01_axi_awqos(4'h0), .s01_axi_awuser(1'b0),
-    .s01_axi_awvalid(1'b0), .s01_axi_awready(),
-    .s01_axi_wdata(toff_data), .s01_axi_wstrb(toff_strb),
-    .s01_axi_wlast(1'b1), .s01_axi_wuser(1'b0),
-    .s01_axi_wvalid(1'b0), .s01_axi_wready(),
-    .s01_axi_bid(), .s01_axi_bresp(), .s01_axi_buser(),
-    .s01_axi_bvalid(), .s01_axi_bready(1'b1),
-    .s01_axi_arid(toff_id), .s01_axi_araddr(toff_addr),
-    .s01_axi_arlen(toff_len), .s01_axi_arsize(toff_size),
-    .s01_axi_arburst(toff_burst), .s01_axi_arlock(1'b0),
-    .s01_axi_arcache(4'h0), .s01_axi_arprot(3'h0),
-    .s01_axi_arqos(4'h0), .s01_axi_aruser(1'b0),
-    .s01_axi_arvalid(1'b0), .s01_axi_arready(),
-    .s01_axi_rid(), .s01_axi_rdata(), .s01_axi_rresp(),
-    .s01_axi_rlast(), .s01_axi_ruser(), .s01_axi_rvalid(),
-    .s01_axi_rready(1'b1),
+    // ---- S01: DMA master ----
+    .s01_axi_awid(s01_axi_awid), .s01_axi_awaddr(s01_axi_awaddr),
+    .s01_axi_awlen(s01_axi_awlen), .s01_axi_awsize(s01_axi_awsize),
+    .s01_axi_awburst(s01_axi_awburst), .s01_axi_awlock(s01_axi_awlock),
+    .s01_axi_awcache(s01_axi_awcache), .s01_axi_awprot(s01_axi_awprot),
+    .s01_axi_awqos(s01_axi_awqos), .s01_axi_awuser(1'b0),
+    .s01_axi_awvalid(s01_axi_awvalid), .s01_axi_awready(s01_axi_awready),
+    .s01_axi_wdata(s01_axi_wdata), .s01_axi_wstrb(s01_axi_wstrb),
+    .s01_axi_wlast(s01_axi_wlast), .s01_axi_wuser(1'b0),
+    .s01_axi_wvalid(s01_axi_wvalid), .s01_axi_wready(s01_axi_wready),
+    .s01_axi_bid(s01_axi_bid), .s01_axi_bresp(s01_axi_bresp),
+    .s01_axi_buser(), .s01_axi_bvalid(s01_axi_bvalid),
+    .s01_axi_bready(s01_axi_bready),
+    .s01_axi_arid(s01_axi_arid), .s01_axi_araddr(s01_axi_araddr),
+    .s01_axi_arlen(s01_axi_arlen), .s01_axi_arsize(s01_axi_arsize),
+    .s01_axi_arburst(s01_axi_arburst), .s01_axi_arlock(s01_axi_arlock),
+    .s01_axi_arcache(s01_axi_arcache), .s01_axi_arprot(s01_axi_arprot),
+    .s01_axi_arqos(s01_axi_arqos), .s01_axi_aruser(1'b0),
+    .s01_axi_arvalid(s01_axi_arvalid), .s01_axi_arready(s01_axi_arready),
+    .s01_axi_rid(s01_axi_rid), .s01_axi_rdata(s01_axi_rdata),
+    .s01_axi_rresp(s01_axi_rresp), .s01_axi_rlast(s01_axi_rlast),
+    .s01_axi_ruser(), .s01_axi_rvalid(s01_axi_rvalid),
+    .s01_axi_rready(s01_axi_rready),
 
     // ---- M00: AES ----
     .m00_axi_awid(m00_awid), .m00_axi_awaddr(m00_awaddr),
@@ -393,20 +487,31 @@ axi_interconnect_wrap_2x8 #(
     .m00_axi_ruser(1'b0), .m00_axi_rvalid(m00_rvalid),
     .m00_axi_rready(m00_rready),
 
-    // ---- M01: DMA CSR tied off ----
-    .m01_axi_awid(), .m01_axi_awaddr(), .m01_axi_awlen(), .m01_axi_awsize(),
-    .m01_axi_awburst(), .m01_axi_awlock(), .m01_axi_awcache(), .m01_axi_awprot(),
-    .m01_axi_awqos(), .m01_axi_awregion(), .m01_axi_awuser(), .m01_axi_awvalid(),
-    .m01_axi_awready(1'b1), .m01_axi_wdata(), .m01_axi_wstrb(), .m01_axi_wlast(),
-    .m01_axi_wuser(), .m01_axi_wvalid(), .m01_axi_wready(1'b1),
-    .m01_axi_bid(8'h0), .m01_axi_bresp(2'b00), .m01_axi_buser(1'b0),
-    .m01_axi_bvalid(1'b0), .m01_axi_bready(),
-    .m01_axi_arid(), .m01_axi_araddr(), .m01_axi_arlen(), .m01_axi_arsize(),
-    .m01_axi_arburst(), .m01_axi_arlock(), .m01_axi_arcache(), .m01_axi_arprot(),
-    .m01_axi_arqos(), .m01_axi_arregion(), .m01_axi_aruser(), .m01_axi_arvalid(),
-    .m01_axi_arready(1'b1), .m01_axi_rid(8'h0), .m01_axi_rdata(32'h0),
-    .m01_axi_rresp(2'b00), .m01_axi_rlast(1'b1), .m01_axi_ruser(1'b0),
-    .m01_axi_rvalid(1'b0), .m01_axi_rready(),
+    // ---- M01: DMA CSR ----
+    .m01_axi_awid(m01_awid), .m01_axi_awaddr(m01_awaddr),
+    .m01_axi_awlen(m01_awlen), .m01_axi_awsize(m01_awsize),
+    .m01_axi_awburst(m01_awburst), .m01_axi_awlock(m01_awlock),
+    .m01_axi_awcache(m01_awcache), .m01_axi_awprot(m01_awprot),
+    .m01_axi_awqos(m01_awqos), .m01_axi_awregion(m01_awregion),
+    .m01_axi_awuser(), .m01_axi_awvalid(m01_awvalid),
+    .m01_axi_awready(m01_awready),
+    .m01_axi_wdata(m01_wdata), .m01_axi_wstrb(m01_wstrb),
+    .m01_axi_wlast(m01_wlast), .m01_axi_wuser(),
+    .m01_axi_wvalid(m01_wvalid), .m01_axi_wready(m01_wready),
+    .m01_axi_bid(m01_bid), .m01_axi_bresp(m01_bresp),
+    .m01_axi_buser(1'b0), .m01_axi_bvalid(m01_bvalid),
+    .m01_axi_bready(m01_bready),
+    .m01_axi_arid(m01_arid), .m01_axi_araddr(m01_araddr),
+    .m01_axi_arlen(m01_arlen), .m01_axi_arsize(m01_arsize),
+    .m01_axi_arburst(m01_arburst), .m01_axi_arlock(m01_arlock),
+    .m01_axi_arcache(m01_arcache), .m01_axi_arprot(m01_arprot),
+    .m01_axi_arqos(m01_arqos), .m01_axi_arregion(m01_arregion),
+    .m01_axi_aruser(), .m01_axi_arvalid(m01_arvalid),
+    .m01_axi_arready(m01_arready),
+    .m01_axi_rid(m01_rid), .m01_axi_rdata(m01_rdata),
+    .m01_axi_rresp(m01_rresp), .m01_axi_rlast(m01_rlast),
+    .m01_axi_ruser(1'b0), .m01_axi_rvalid(m01_rvalid),
+    .m01_axi_rready(m01_rready),
 
     // ---- M02: SPI ----
     .m02_axi_awid(m02_awid), .m02_axi_awaddr(m02_awaddr),
@@ -512,21 +617,33 @@ axi_interconnect_wrap_2x8 #(
     .m05_axi_ruser(1'b0), .m05_axi_rvalid(m05_rvalid),
     .m05_axi_rready(m05_rready),
 
-    // ---- M06 / M07: tied off ----
-    .m06_axi_awid(), .m06_axi_awaddr(), .m06_axi_awlen(), .m06_axi_awsize(),
-    .m06_axi_awburst(), .m06_axi_awlock(), .m06_axi_awcache(), .m06_axi_awprot(),
-    .m06_axi_awqos(), .m06_axi_awregion(), .m06_axi_awuser(), .m06_axi_awvalid(),
-    .m06_axi_awready(1'b1), .m06_axi_wdata(), .m06_axi_wstrb(), .m06_axi_wlast(),
-    .m06_axi_wuser(), .m06_axi_wvalid(), .m06_axi_wready(1'b1),
-    .m06_axi_bid(8'h0), .m06_axi_bresp(2'b00), .m06_axi_buser(1'b0),
-    .m06_axi_bvalid(1'b0), .m06_axi_bready(),
-    .m06_axi_arid(), .m06_axi_araddr(), .m06_axi_arlen(), .m06_axi_arsize(),
-    .m06_axi_arburst(), .m06_axi_arlock(), .m06_axi_arcache(), .m06_axi_arprot(),
-    .m06_axi_arqos(), .m06_axi_arregion(), .m06_axi_aruser(), .m06_axi_arvalid(),
-    .m06_axi_arready(1'b1), .m06_axi_rid(8'h0), .m06_axi_rdata(32'h0),
-    .m06_axi_rresp(2'b00), .m06_axi_rlast(1'b1), .m06_axi_ruser(1'b0),
-    .m06_axi_rvalid(1'b0), .m06_axi_rready(),
-    .m07_axi_awid(), .m07_axi_awaddr(), .m07_axi_awlen(), .m07_axi_awsize(),
+    // ---- M06: AXI SRAM ----
+    .m06_axi_awid(m06_awid), .m06_axi_awaddr(m06_awaddr),
+    .m06_axi_awlen(m06_awlen), .m06_axi_awsize(m06_awsize),
+    .m06_axi_awburst(m06_awburst), .m06_axi_awlock(m06_awlock),
+    .m06_axi_awcache(m06_awcache), .m06_axi_awprot(m06_awprot),
+    .m06_axi_awqos(m06_awqos), .m06_axi_awregion(m06_awregion),
+    .m06_axi_awuser(), .m06_axi_awvalid(m06_awvalid),
+    .m06_axi_awready(m06_awready),
+    .m06_axi_wdata(m06_wdata), .m06_axi_wstrb(m06_wstrb),
+    .m06_axi_wlast(m06_wlast), .m06_axi_wuser(),
+    .m06_axi_wvalid(m06_wvalid), .m06_axi_wready(m06_wready),
+    .m06_axi_bid(m06_bid), .m06_axi_bresp(m06_bresp),
+    .m06_axi_buser(1'b0), .m06_axi_bvalid(m06_bvalid),
+    .m06_axi_bready(m06_bready),
+    .m06_axi_arid(m06_arid), .m06_axi_araddr(m06_araddr),
+    .m06_axi_arlen(m06_arlen), .m06_axi_arsize(m06_arsize),
+    .m06_axi_arburst(m06_arburst), .m06_axi_arlock(m06_arlock),
+    .m06_axi_arcache(m06_arcache), .m06_axi_arprot(m06_arprot),
+    .m06_axi_arqos(m06_arqos), .m06_axi_arregion(m06_arregion),
+    .m06_axi_aruser(), .m06_axi_arvalid(m06_arvalid),
+    .m06_axi_arready(m06_arready),
+    .m06_axi_rid(m06_rid), .m06_axi_rdata(m06_rdata),
+    .m06_axi_rresp(m06_rresp), .m06_axi_rlast(m06_rlast),
+    .m06_axi_ruser(1'b0), .m06_axi_rvalid(m06_rvalid),
+    .m06_axi_rready(m06_rready),
+
+    // ---- M07: tied off ----
     .m07_axi_awburst(), .m07_axi_awlock(), .m07_axi_awcache(), .m07_axi_awprot(),
     .m07_axi_awqos(), .m07_axi_awregion(), .m07_axi_awuser(), .m07_axi_awvalid(),
     .m07_axi_awready(1'b1), .m07_axi_wdata(), .m07_axi_wstrb(), .m07_axi_wlast(),
@@ -613,6 +730,7 @@ spi_axi_top #(
     .spi_clk(spi_clk_o), .spi_mosi(spi_mosi_o),
     .spi_miso(spi_miso_i), .spi_cs_n(spi_cs_n_o)
 );
+assign m02_rlast = 1'b1;
 
 // ====================================================================
 // M03: UART — Bridge + IP
@@ -778,6 +896,143 @@ EF_GPIO8_axi #(
     .s_axi_rready(gpio_rready),
     .gpio_in(gpio_in_i), .gpio_out(gpio_out_o),
     .gpio_oe(gpio_oe_o), .gpio_irq(gpio_irq_o)
+);
+
+// ====================================================================
+// M01: DMA Controller — Flat Wrapper + Core
+// ====================================================================
+dma_axi_flat_wrapper #(
+    .DMA_ID_VAL(1),
+    .ADDR_WIDTH(ADDR_WIDTH),
+    .DATA_WIDTH(DATA_WIDTH),
+    .ID_WIDTH(ID_WIDTH),
+    .STRB_WIDTH(STRB_WIDTH),
+    .ALEN_WIDTH(8)
+) u_dma (
+    .clk(clk),
+    .rstn(rstn),
+
+    // CSR AXI4-Lite Slave (M01)
+    .csr_awid(m01_awid),
+    .csr_awaddr(m01_awaddr),
+    .csr_awprot(m01_awprot),
+    .csr_awvalid(m01_awvalid),
+    .csr_awready(m01_awready),
+    .csr_wdata(m01_wdata),
+    .csr_wstrb(m01_wstrb),
+    .csr_wvalid(m01_wvalid),
+    .csr_wready(m01_wready),
+    .csr_bid(m01_bid),
+    .csr_bresp(m01_bresp),
+    .csr_bvalid(m01_bvalid),
+    .csr_bready(m01_bready),
+    .csr_arid(m01_arid),
+    .csr_araddr(m01_araddr),
+    .csr_arprot(m01_arprot),
+    .csr_arvalid(m01_arvalid),
+    .csr_arready(m01_arready),
+    .csr_rid(m01_rid),
+    .csr_rdata(m01_rdata),
+    .csr_rresp(m01_rresp),
+    .csr_rvalid(m01_rvalid),
+    .csr_rready(m01_rready),
+
+    // Data AXI4 Master (S01)
+    .m_awid(s01_axi_awid),
+    .m_awaddr(s01_axi_awaddr),
+    .m_awlen(s01_axi_awlen),
+    .m_awsize(s01_axi_awsize),
+    .m_awburst(s01_axi_awburst),
+    .m_awlock(s01_axi_awlock),
+    .m_awcache(s01_axi_awcache),
+    .m_awprot(s01_axi_awprot),
+    .m_awqos(s01_axi_awqos),
+    .m_awregion(s01_axi_awregion),
+    .m_awvalid(s01_axi_awvalid),
+    .m_awready(s01_axi_awready),
+    .m_wdata(s01_axi_wdata),
+    .m_wstrb(s01_axi_wstrb),
+    .m_wlast(s01_axi_wlast),
+    .m_wvalid(s01_axi_wvalid),
+    .m_wready(s01_axi_wready),
+    .m_bid(s01_axi_bid),
+    .m_bresp(s01_axi_bresp),
+    .m_bvalid(s01_axi_bvalid),
+    .m_bready(s01_axi_bready),
+    .m_arid(s01_axi_arid),
+    .m_araddr(s01_axi_araddr),
+    .m_arlen(s01_axi_arlen),
+    .m_arsize(s01_axi_arsize),
+    .m_arburst(s01_axi_arburst),
+    .m_arlock(s01_axi_arlock),
+    .m_arcache(s01_axi_arcache),
+    .m_arprot(s01_axi_arprot),
+    .m_arqos(s01_axi_arqos),
+    .m_arregion(s01_axi_arregion),
+    .m_arvalid(s01_axi_arvalid),
+    .m_arready(s01_axi_arready),
+    .m_rid(s01_axi_rid),
+    .m_rdata(s01_axi_rdata),
+    .m_rresp(s01_axi_rresp),
+    .m_rlast(s01_axi_rlast),
+    .m_rvalid(s01_axi_rvalid),
+    .m_rready(s01_axi_rready),
+
+    .dma_done_o(dma_done_o),
+    .dma_error_o(dma_error_o)
+);
+
+// ====================================================================
+// M06: AXI SRAM Staging Memory (64 KB at 0x0600_0000)
+// ====================================================================
+axi_sram #(
+    .DATA_WIDTH(DATA_WIDTH),
+    .ADDR_WIDTH(ADDR_WIDTH),
+    .ID_WIDTH(ID_WIDTH),
+    .STRB_WIDTH(STRB_WIDTH),
+    .DEPTH(16384)
+) u_sram (
+    .clk(clk),
+    .rstn(rstn),
+    .s_axi_awid(m06_awid),
+    .s_axi_awaddr(m06_awaddr),
+    .s_axi_awlen(m06_awlen),
+    .s_axi_awsize(m06_awsize),
+    .s_axi_awburst(m06_awburst),
+    .s_axi_awlock(m06_awlock),
+    .s_axi_awcache(m06_awcache),
+    .s_axi_awprot(m06_awprot),
+    .s_axi_awqos(m06_awqos),
+    .s_axi_awregion(m06_awregion),
+    .s_axi_awvalid(m06_awvalid),
+    .s_axi_awready(m06_awready),
+    .s_axi_wdata(m06_wdata),
+    .s_axi_wstrb(m06_wstrb),
+    .s_axi_wlast(m06_wlast),
+    .s_axi_wvalid(m06_wvalid),
+    .s_axi_wready(m06_wready),
+    .s_axi_bid(m06_bid),
+    .s_axi_bresp(m06_bresp),
+    .s_axi_bvalid(m06_bvalid),
+    .s_axi_bready(m06_bready),
+    .s_axi_arid(m06_arid),
+    .s_axi_araddr(m06_araddr),
+    .s_axi_arlen(m06_arlen),
+    .s_axi_arsize(m06_arsize),
+    .s_axi_arburst(m06_arburst),
+    .s_axi_arlock(m06_arlock),
+    .s_axi_arcache(m06_arcache),
+    .s_axi_arprot(m06_arprot),
+    .s_axi_arqos(m06_arqos),
+    .s_axi_arregion(m06_arregion),
+    .s_axi_arvalid(m06_arvalid),
+    .s_axi_arready(m06_arready),
+    .s_axi_rid(m06_rid),
+    .s_axi_rdata(m06_rdata),
+    .s_axi_rresp(m06_rresp),
+    .s_axi_rlast(m06_rlast),
+    .s_axi_rvalid(m06_rvalid),
+    .s_axi_rready(m06_rready)
 );
 
 endmodule

@@ -3,12 +3,13 @@
 # ============================================================
 
 # ----- VCS / Synopsys Simulation Artifacts -----
-simv
-simv.daidir/
+simv*
+*.daidir/
 csrc/
 *.key
 ucli.key
 vc_hdrs.h
+.~lock.*#
 
 # ----- Verdi / Novas -----
 *.fsdb

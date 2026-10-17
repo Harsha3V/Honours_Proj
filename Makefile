@@ -51,7 +51,16 @@ CYCLES     ?= 500000
 # -----------------------------------------------------------------------
 # Phony targets
 # -----------------------------------------------------------------------
-.PHONY: all config sw sim run verdi clean clean_all help
+.PHONY: all config sw sim run verdi clean clean_all help c_test sv_test
+
+# -----------------------------------------------------------------------
+# Dedicated C Test and SystemVerilog Test Targets
+# -----------------------------------------------------------------------
+c_test:
+	@$(MAKE) -C test_c
+
+sv_test:
+	@$(MAKE) -C test_sv
 
 # -----------------------------------------------------------------------
 # Default target

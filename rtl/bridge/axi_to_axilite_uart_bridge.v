@@ -329,10 +329,10 @@ assign s_axi_rresp   = rd_rresp;
 assign s_axi_rlast   = 1'b1;          // always 1 — AXI4-Lite = single beat
 assign s_axi_rvalid  = rd_rvalid;
 
-// To UART AR channel
+// To UART AR channel — held asserted throughout RD_ADDR and RD_DATA so rvalid_o is ungated
 assign m_axi_arid    = {{(LITE_ID_WIDTH-AXI_ID_WIDTH){1'b0}}, rd_id};  // zero-extend 8→12
 assign m_axi_araddr  = rd_addr;
-assign m_axi_arvalid = (rd_state == RD_ADDR);
+assign m_axi_arvalid = (rd_state == RD_ADDR) || (rd_state == RD_DATA);
 
 // Accept R from UART
 assign m_axi_rready  = (rd_state == RD_DATA);

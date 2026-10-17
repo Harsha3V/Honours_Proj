@@ -1,22 +1,19 @@
 /* =============================================================================
  * File    : boot.ld
- * Project : Honours Project — VeeR EL2 + UART SoC
- * Desc    : Linker script for the RISC-V boot program.
+ * Project : Honours Project — VeeR EL2 Encrypted ECU Gateway SoC
+ * Desc    : Linker script supporting C runtime startup.
  *
- * Memory map (must match VeeR EL2 default config):
- *
- *   ROM  : 0x8000_0000  (16 KB)  — instruction fetch via IFU AXI → ifu_rom_stub
- *   DCCM : 0x5000_0000  (128 KB) — data / stack (VeeR EL2 default DCCM range)
- *
- * The IFU ROM stub (ifu_rom_stub.v) is loaded with boot.hex at simulation
- * start.  The stub maps byte address 0x8000_0000 to ROM word index 0 by
- * stripping the top bits inside the module.
+ * Memory map:
+ *   ROM  : 0x8000_0000  (16 KB) — Boot ROM (IFU AXI fetch)
+ *   DCCM : 0xF004_0000  (64 KB) — Fast Data RAM / Stack / Heap
+ *   SRAM : 0x0600_0000  (64 KB) — AXI Shared Buffer (CPU + DMA)
  * =============================================================================*/
 
 MEMORY
 {
     ROM  (rx)  : ORIGIN = 0x80000000, LENGTH = 16K
     DCCM (rwx) : ORIGIN = 0xF0040000, LENGTH = 64K
+    SRAM (rwx) : ORIGIN = 0x06000000, LENGTH = 64K
 }
 
 ENTRY(_start)
@@ -24,37 +21,48 @@ ENTRY(_start)
 SECTIONS
 {
     /* ------------------------------------------------------------------ */
-    /* .text — executable code, placed in ROM                             */
+    /* .text — executable code and read-only data placed in ROM          */
     /* ------------------------------------------------------------------ */
     .text 0x80000000 :
     {
-        *(.text.boot)       /* _start must be first                       */
+        *(.text.boot)       /* _start entry must be first                 */
         *(.text*)
         *(.rodata*)
         . = ALIGN(4);
+        _etext = .;
     } > ROM
 
+    /* LMA address of .data in ROM */
+    _sidata = LOADADDR(.data);
+
     /* ------------------------------------------------------------------ */
-    /* .data — initialised globals, placed in DCCM                        */
-    /* (We have no C runtime, so this is empty for a pure-asm program)    */
+    /* .data — initialized globals placed in DCCM                         */
     /* ------------------------------------------------------------------ */
-    .data :
+    .data : AT(_sidata)
     {
+        _sdata = .;
         *(.data*)
         . = ALIGN(4);
+        _edata = .;
     } > DCCM
 
     /* ------------------------------------------------------------------ */
-    /* .bss — zero-initialised globals                                     */
+    /* .bss — zero-initialized globals in DCCM                            */
     /* ------------------------------------------------------------------ */
     .bss :
     {
+        _sbss = .;
         *(.bss*)
         *(COMMON)
         . = ALIGN(4);
+        _ebss = .;
     } > DCCM
 
     /* ------------------------------------------------------------------ */
-    /* Stack sits at the top of DCCM — sp is set manually in _start       */
+    /* Shared AXI Staging Buffer in on-chip SRAM                          */
     /* ------------------------------------------------------------------ */
+    .sram_buf (NOLOAD) :
+    {
+        *(.sram_buf*)
+    } > SRAM
 }

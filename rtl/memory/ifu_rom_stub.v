@@ -29,15 +29,16 @@
 `default_nettype none
 
 module ifu_rom_stub #(
-    parameter ID_WIDTH  = 3,
-    parameter ROM_WORDS = 1024,                          // 32-bit words
-    parameter ROM_FILE  = "../sw/boot.hex"
+    parameter ID_WIDTH     = 3,                          // IFU ID width
+    parameter LSU_ID_WIDTH = 4,                          // LSU ID width
+    parameter ROM_WORDS    = 1024,                       // 32-bit words
+    parameter ROM_FILE     = "../sw/boot.hex"
 )(
     input  wire                 clk,
     input  wire                 rstn,   // active-low reset
 
     // ----------------------------------------------------------------
-    // AXI4 Read Address channel (AR)
+    // Port A: IFU AXI4 Read Address channel (AR)
     // ----------------------------------------------------------------
     input  wire [ID_WIDTH-1:0]  axi_arid_i,
     input  wire [31:0]          axi_araddr_i,
@@ -48,7 +49,7 @@ module ifu_rom_stub #(
     output wire                 axi_arready_o,
 
     // ----------------------------------------------------------------
-    // AXI4 Read Data channel (R)
+    // Port A: IFU AXI4 Read Data channel (R)
     // ----------------------------------------------------------------
     output wire [ID_WIDTH-1:0]  axi_rid_o,
     output wire [63:0]          axi_rdata_o,    // 64-bit: 2 instructions
@@ -58,7 +59,28 @@ module ifu_rom_stub #(
     input  wire                 axi_rready_i,
 
     // ----------------------------------------------------------------
-    // AXI4 Write channels (AW / W / B) — IFU never writes
+    // Port B: LSU AXI4 Read Address channel (AR)
+    // ----------------------------------------------------------------
+    input  wire [LSU_ID_WIDTH-1:0] lsu_arid_i,
+    input  wire [31:0]             lsu_araddr_i,
+    input  wire [7:0]              lsu_arlen_i,
+    input  wire [2:0]              lsu_arsize_i,
+    input  wire [1:0]              lsu_arburst_i,
+    input  wire                    lsu_arvalid_i,
+    output wire                    lsu_arready_o,
+
+    // ----------------------------------------------------------------
+    // Port B: LSU AXI4 Read Data channel (R)
+    // ----------------------------------------------------------------
+    output wire [LSU_ID_WIDTH-1:0] lsu_rid_o,
+    output wire [63:0]             lsu_rdata_o,
+    output wire [1:0]              lsu_rresp_o,
+    output wire                    lsu_rlast_o,
+    output wire                    lsu_rvalid_o,
+    input  wire                    lsu_rready_i,
+
+    // ----------------------------------------------------------------
+    // AXI4 Write channels (AW / W / B) — IFU/ROM never writes
     // ----------------------------------------------------------------
     output wire                 axi_awready_o,
     output wire                 axi_wready_o,
@@ -173,7 +195,77 @@ always @(posedge clk or negedge rstn) begin
 end
 
 // ===================================================================
-// Write channels — tie off (IFU never writes)
+// Port B: LSU Read FSM
+// ===================================================================
+localparam LSU_RD_IDLE = 1'b0;
+localparam LSU_RD_DATA = 1'b1;
+
+reg                    lsu_rd_state;
+reg [LSU_ID_WIDTH-1:0] lsu_rd_id;
+reg [BEAT_BITS-1:0]    lsu_rd_beat;
+reg [7:0]              lsu_rd_len;
+
+reg [63:0]             lsu_r_rdata;
+reg [LSU_ID_WIDTH-1:0] lsu_r_rid;
+reg                    lsu_r_rvalid;
+reg                    lsu_r_rlast;
+
+assign lsu_arready_o = (lsu_rd_state == LSU_RD_IDLE);
+assign lsu_rid_o     = lsu_r_rid;
+assign lsu_rdata_o   = lsu_r_rdata;
+assign lsu_rresp_o   = 2'b00;  // OKAY
+assign lsu_rlast_o   = lsu_r_rlast;
+assign lsu_rvalid_o  = lsu_r_rvalid;
+
+always @(posedge clk or negedge rstn) begin
+    if (~rstn) begin
+        lsu_rd_state <= LSU_RD_IDLE;
+        lsu_rd_id    <= {LSU_ID_WIDTH{1'b0}};
+        lsu_rd_beat  <= {BEAT_BITS{1'b0}};
+        lsu_rd_len   <= 8'h0;
+        lsu_r_rdata  <= 64'h0;
+        lsu_r_rid    <= {LSU_ID_WIDTH{1'b0}};
+        lsu_r_rvalid <= 1'b0;
+        lsu_r_rlast  <= 1'b0;
+    end else begin
+        case (lsu_rd_state)
+            LSU_RD_IDLE: begin
+                lsu_r_rvalid <= 1'b0;
+                lsu_r_rlast  <= 1'b0;
+                if (lsu_arvalid_i) begin
+                    lsu_rd_id    <= lsu_arid_i;
+                    lsu_rd_beat  <= lsu_araddr_i[BEAT_BITS+2:3];
+                    lsu_rd_len   <= lsu_arlen_i;
+                    lsu_rd_state <= LSU_RD_DATA;
+                end
+            end
+
+            LSU_RD_DATA: begin
+                lsu_r_rid    <= lsu_rd_id;
+                lsu_r_rdata  <= { rom[ {lsu_rd_beat, 1'b1} ],
+                                  rom[ {lsu_rd_beat, 1'b0} ] };
+                lsu_r_rvalid <= 1'b1;
+                lsu_r_rlast  <= (lsu_rd_len == 8'h0);
+
+                if (lsu_r_rvalid && lsu_rready_i) begin
+                    if (lsu_rd_len == 8'h0) begin
+                        lsu_r_rvalid <= 1'b0;
+                        lsu_r_rlast  <= 1'b0;
+                        lsu_rd_state <= LSU_RD_IDLE;
+                    end else begin
+                        lsu_rd_beat <= lsu_rd_beat + 1'b1;
+                        lsu_rd_len  <= lsu_rd_len  - 1'b1;
+                    end
+                end
+            end
+
+            default: lsu_rd_state <= LSU_RD_IDLE;
+        endcase
+    end
+end
+
+// ===================================================================
+// Write channels — tie off (IFU/ROM never writes)
 // ===================================================================
 
 assign axi_awready_o = 1'b1;
