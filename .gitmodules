@@ -1,0 +1,9 @@
+[submodule "rtl/Cores-VeeR-EL2"]
+	path = rtl/Cores-VeeR-EL2
+	url = https://github.com/chipsalliance/Cores-VeeR-EL2.git
+[submodule "rtl/dma/bus_arch_sv_pkg"]
+	path = rtl/dma/bus_arch_sv_pkg
+	url = https://github.com/rggen/bus_arch_sv_pkg.git
+[submodule "rtl/dma/rggen-verilog-rtl"]
+	path = rtl/dma/rggen-verilog-rtl
+	url = https://github.com/rggen/rggen-verilog-rtl.git
