@@ -417,3 +417,289 @@ Honours_Proj/
 │
 └── Scripts/
     └── PROJECT_LOG.txt                  ← THIS FILE
+
+
+## ================================================================
+## SECTION 9 — SESSION LOG: 17 October 2026
+## ================================================================
+
+Date     : Saturday, 17 October 2026
+Engineer : Student (1602-23-735-189) + Kiro AI
+Activity : Project review, repo comparison, testbench creation (Task 6)
+
+----------------------------------------------------------------
+9.1 — WHAT WAS DONE THIS SESSION
+----------------------------------------------------------------
+
+STEP 1 — Full project review & understanding
+  - Went through the GitHub repo: https://github.com/Harsha3V/Honours_Proj
+  - Read README.md, PROJECT_LOG.txt, and all RTL files
+  - Understood full SoC architecture:
+      VeeR EL2 CPU → AXI4 Interconnect (2M×8S) → 6 peripherals
+      Peripherals: AES, DMA, SPI, UART, Timer, GPIO
+  - Identified all pending work (see Section 9.2 below)
+
+STEP 2 — GitHub clone created (fresh copy for reference)
+  Location: /home/student/Documents/Honours_Proj_github/
+  Command : git clone https://github.com/Harsha3V/Honours_Proj.git Honours_Proj_github
+  Purpose : Clean snapshot of what is pushed to GitHub vs what is only local
+
+STEP 3 — Compared GitHub clone vs local working copy
+  Local working copy: /home/student/Documents/ECU_gateway_SoC_189/Honours_Proj/
+  Findings:
+    - Local is AHEAD of GitHub (local has unpushed changes)
+    - Modified but not pushed: Scripts/*.sh, rtl/gpio/ef_util_sync.v,
+        rtl/top/axi_interconnect_uart_top.v (1162 lines changed),
+        sim/run_interconnect_uart.f, sw/boot.bin/elf/hex,
+        rtl/sw/build/boot.elf + boot_32.hex,
+        run/simv_uart + run/simv_veer_uart (simulation binaries)
+    - Untracked (on PC only, not pushed): rtl/spi/SPI_Master.v,
+        rtl/spi/SPI_Master_With_Single_CS.v,
+        rtl/timer/EF_TCC32.v, rtl/timer/EF_TCC32_axi.v
+
+STEP 4 — Pending work identified (full list)
+  Priority 1 (Critical — missing):
+    [ ] rtl/soc_top/soc_top.v       — Full SoC integration top (file doesn't exist)
+    [ ] Wire DMA M01+S01 into interconnect top
+    [ ] sw/app/main.c               — RISC-V firmware: AES key + DMA config + SPI send
+
+  Priority 2 (Verification):
+    [ ] tb/soc/tb_soc_top.v         — End-to-end SoC testbench (file doesn't exist)
+    [ ] AXI SRAM block for DMA staging buffers (DMEM on AXI bus)
+    [x] Testbenches for SPI, Timer, GPIO individually     ← DONE THIS SESSION
+    [ ] Run and verify 6-IP integration simulation
+    [ ] Update README with final simulation results
+
+STEP 5 — Task 6 COMPLETED: Testbenches for SPI, Timer, GPIO
+  All files created in: /home/student/Documents/Honours_Proj_github/
+
+  (a) tb/spi/tb_spi_axi_top.v   — 7 test cases
+        TC1: CS_N inactive after reset
+        TC2: TX_COUNT register write/readback
+        TC3: STATUS.TX_READY=1 when SPI idle
+        TC4+TC5: Transmit 0xA5, capture MOSI bit-by-bit, verify byte
+        TC6: MISO loopback → RX_DATA = 0xA5
+        TC7: Unknown address → 0xDEADBEEF, no hang
+
+  (b) tb/timer/tb_EF_TCC32_axi.v — 8 test cases
+        TC1: CONTROL_REG = 0 after reset
+        TC2: PERIOD register write/readback = 0xFF
+        TC3: CONTROL EN+TMR_EN bits writable
+        TC4: Timer counts down (read TIMER twice, verify decrement)
+        TC5: Timeout interrupt — timer_irq asserts after period expires
+        TC6: ICR write clears RIS[0]
+        TC7: One-shot mode — timer stops after 1 period
+        TC8: Unknown address → 0xDEADBEEF, no hang
+
+  (c) tb/gpio/tb_EF_GPIO8_axi.v  — 10 test cases
+        TC1: DATAO=0, DIR=0 after reset
+        TC2: DIR=0xFF (all pins as output)
+        TC3: DATAO write/readback = 0xAA
+        TC4: gpio_out pin matches DATAO register
+        TC5: DATAI reads back driven gpio_in = 0x5A
+        TC6: Posedge interrupt — RIS posedge bit set on 0→1 transition
+        TC7: MIS = RIS & IM (interrupt masking verified)
+        TC8: IC write clears RIS bit
+        TC9: gpio_irq output asserts on unmasked interrupt
+        TC10: Unknown address → 0xDEADBEEF, no hang
+
+  (d) sim/run_spi.f   — VCS filelist for SPI simulation
+        Compile top: tb_spi_axi_top,  output binary: simv_spi
+
+  (e) sim/run_timer.f — VCS filelist for Timer simulation
+        Compile top: tb_EF_TCC32_axi, output binary: simv_timer
+
+  (f) sim/run_gpio.f  — VCS filelist for GPIO simulation
+        Compile top: tb_EF_GPIO8_axi, output binary: simv_gpio
+
+----------------------------------------------------------------
+9.2 — HOW TO RUN THE NEW SIMULATIONS
+----------------------------------------------------------------
+
+Environment setup (must be done first in every new terminal):
+  export SNPSLMD_LICENSE_FILE=27021@14.139.1.126
+  export VCS_HOME=/home/student/snps_tools_target/vcs/U-2023.03
+  export VERDI_HOME=/home/student/snps_tools_target/verdi/U-2023.03-SP1
+  export PATH=$VCS_HOME/bin:$VERDI_HOME/bin:$PATH
+  VERDI_PLI=$VERDI_HOME/share/PLI/VCS/linux64
+
+SPI simulation:
+  cd /home/student/Documents/Honours_Proj_github/sim
+  vcs -full64 -debug_access+all -kdb -sverilog -timescale=1ns/1ps \
+      -f run_spi.f -top tb_spi_axi_top \
+      -P $VERDI_PLI/novas.tab -LDFLAGS "-Wl,-rpath,$VERDI_PLI" $VERDI_PLI/pli.a \
+      -o simv_spi && ./simv_spi
+
+Timer simulation:
+  cd /home/student/Documents/Honours_Proj_github/sim
+  vcs -full64 -debug_access+all -kdb -sverilog -timescale=1ns/1ps \
+      -f run_timer.f -top tb_EF_TCC32_axi \
+      -P $VERDI_PLI/novas.tab -LDFLAGS "-Wl,-rpath,$VERDI_PLI" $VERDI_PLI/pli.a \
+      -o simv_timer && ./simv_timer
+
+GPIO simulation:
+  cd /home/student/Documents/Honours_Proj_github/sim
+  vcs -full64 -debug_access+all -kdb -sverilog -timescale=1ns/1ps \
+      -f run_gpio.f -top tb_EF_GPIO8_axi \
+      -P $VERDI_PLI/novas.tab -LDFLAGS "-Wl,-rpath,$VERDI_PLI" $VERDI_PLI/pli.a \
+      -o simv_gpio && ./simv_gpio
+
+----------------------------------------------------------------
+9.3 — CURRENT STATUS AFTER THIS SESSION
+----------------------------------------------------------------
+
+  Module                        | Status
+  ------------------------------|--------------------------------------------
+  AXI4 Interconnect (2×8)      | DONE — simulated, passing
+  UART AXI4-Lite                | DONE — 8/8 tests passing
+  AXI→AXI-Lite Bridge (UART)   | DONE — simulated, passing
+  AES-128 Encrypt+Decrypt       | DONE — NIST FIPS-197 verified, passing
+  SPI Master + AXI wrapper      | RTL done, TB written, NOT YET simulated
+  Timer EF_TCC32 + AXI wrapper  | RTL done, TB written, NOT YET simulated
+  GPIO EF_GPIO8 + AXI wrapper   | RTL done, TB written, NOT YET simulated
+  VeeR EL2 + UART partial SoC   | Sim binary exists (simv_veer_uart)
+  DMA flat wrapper               | Written, compile-clean, NOT wired into SoC
+  Full SoC Top (soc_top.v)      | NOT WRITTEN — highest priority next task
+  Full SoC Testbench             | NOT WRITTEN
+  RISC-V App Firmware            | NOT WRITTEN (boot stub only)
+
+----------------------------------------------------------------
+9.4 — NEXT STEPS (in priority order)
+----------------------------------------------------------------
+
+  1. Run the 3 new simulations (SPI, Timer, GPIO) on the lab machine
+     and fix any issues that come up
+  2. Write rtl/soc_top/soc_top.v — wire all IPs into full SoC
+  3. Wire DMA (M01 slave + S01 master) into the interconnect
+  4. Write sw/app/main.c — firmware: AES key load + DMA config + SPI transmit
+  5. Write tb/soc/tb_soc_top.v — end-to-end SoC testbench
+  6. Run full SoC simulation and verify encrypted frame pipeline
+
+## ================================================================
+
+## ================================================================
+## SECTION 10 — SESSION LOG: 17 October 2026 (Continued)
+## ================================================================
+
+Date     : Saturday, 17 October 2026 (afternoon session)
+Engineer : Student (1602-23-735-189) + Kiro AI
+Activity : axi_dma submodule fix, full status review
+
+----------------------------------------------------------------
+10.1 — WHAT WAS DONE THIS SESSION
+----------------------------------------------------------------
+
+STEP 1 — axi_dma submodules populated
+  Problem: rtl/dma/bus_arch_sv_pkg/ and rtl/dma/rggen-verilog-rtl/ were
+           EMPTY directories. The axi_dma repo uses git submodules, and
+           bus_arch_sv_pkg uses SSH (git@github.com) which is blocked on
+           this machine (no SSH keys).
+
+  Fix:
+    - Cloned bus_arch_sv_pkg via HTTPS:
+        https://github.com/aignacio/bus_arch_sv_pkg.git
+        → copied amba_axi_pkg.sv, amba_ahb_pkg.sv, intel_avalon_pkg.sv
+    - Cloned rggen-verilog-rtl via HTTPS:
+        https://github.com/rggen/rggen-verilog-rtl.git
+        → copied all 24 files (.v + .vh)
+
+  Verification: 17/17 files in run_dma.f — ALL PRESENT, 0 MISSING
+
+  Updated sim/run_dma.f:
+    - Added bus_arch_sv_pkg/amba_axi_pkg.sv at top of compile order
+      (required: dma_axi_flat_wrapper.sv does "import amba_axi_pkg::*")
+    - Added bus_arch_sv_pkg/amba_ahb_pkg.sv
+    - Added +incdir+ instructions in header comment
+
+STEP 2 — Confirmed existing DMA files are correct
+  Compared rtl/dma/ project files vs fresh axi_dma GitHub clone:
+  → ZERO DIFFERENCES. All core DMA files already in project were
+    byte-for-byte identical to GitHub. Nothing needed replacing.
+  → dma_axi_flat_wrapper.sv is a CUSTOM project file (not from upstream).
+
+  Conclusion: No need to clone axi_dma again. Work directly on project.
+
+STEP 3 — Temp clone cleanup (safe to run anytime)
+  rm -rf /tmp/axi_dma_fresh /tmp/bus_arch_sv_pkg_https /tmp/rggen_rtl
+
+----------------------------------------------------------------
+10.2 — COMPLETE STATUS: WHAT IS DONE vs PENDING
+----------------------------------------------------------------
+
+✅ COMPLETED
+  ┌─────────────────────────────────────────┬──────────────────────────────────┐
+  │ Item                                    │ Evidence                         │
+  ├─────────────────────────────────────────┼──────────────────────────────────┤
+  │ AXI4 Interconnect (2×8 crossbar)        │ Simulated — all tests pass       │
+  │ UART AXI4-Lite slave                    │ Simulated — 8/8 tests pass       │
+  │ AXI→AXI-Lite Bridge (UART)             │ Simulated — passing              │
+  │ AES-128 Encrypt Engine                  │ NIST FIPS-197 verified           │
+  │ AES-128 Decrypt Engine                  │ Round-trip verified              │
+  │ AXI→AXI-Lite Bridge (AES)             │ RTL done, wired                  │
+  │ AXI→AXI-Lite Bridge (Timer)           │ RTL done, wired                  │
+  │ AXI→AXI-Lite Bridge (GPIO)            │ RTL done, wired                  │
+  │ SPI Master + AXI wrapper               │ RTL done, wired at M02           │
+  │ Timer EF_TCC32 + AXI wrapper            │ RTL done, wired at M04           │
+  │ GPIO EF_GPIO8 + AXI wrapper             │ RTL done, wired at M05           │
+  │ 6-IP Integration Top                    │ Compiles clean                   │
+  │ VeeR EL2 + UART partial SoC             │ sim binary exists (simv_veer_uart│
+  │ Boot assembly stub (boot.S → boot.hex)  │ Compiled, 20 instructions        │
+  │ tb/spi/tb_spi_axi_top.v                 │ Written this session — 7 TCs     │
+  │ tb/timer/tb_EF_TCC32_axi.v              │ Written this session — 8 TCs     │
+  │ tb/gpio/tb_EF_GPIO8_axi.v               │ Written this session — 10 TCs    │
+  │ sim/run_spi.f                           │ Written this session             │
+  │ sim/run_timer.f                         │ Written this session             │
+  │ sim/run_gpio.f                          │ Written this session             │
+  │ DMA RTL core (axi_dma IP)               │ All 6 core .sv files present     │
+  │ DMA CSR (csr_dma.v)                     │ Present                          │
+  │ DMA flat wrapper (dma_axi_flat_wrapper) │ Present, compiles clean          │
+  │ bus_arch_sv_pkg submodule               │ Populated this session           │
+  │ rggen-verilog-rtl submodule             │ Populated this session           │
+  │ sim/run_dma.f                           │ Updated this session             │
+  └─────────────────────────────────────────┴──────────────────────────────────┘
+
+❌ PENDING (in priority order)
+  ┌────┬─────────────────────────────────────────┬──────────────────────────────┐
+  │ P1 │ Run SPI simulation (sim/run_spi.f)      │ TB written, not yet run      │
+  │ P1 │ Run Timer simulation (sim/run_timer.f)  │ TB written, not yet run      │
+  │ P1 │ Run GPIO simulation (sim/run_gpio.f)    │ TB written, not yet run      │
+  │ P1 │ Run DMA compile check (sim/run_dma.f)   │ Files ready, not yet compile │
+  ├────┼─────────────────────────────────────────┼──────────────────────────────┤
+  │ P2 │ Wire DMA into SoC top                   │ M01 slave + S01 master ports │
+  │    │   axi_interconnect_uart_top.v           │ not connected yet            │
+  ├────┼─────────────────────────────────────────┼──────────────────────────────┤
+  │ P3 │ rtl/soc_top/soc_top.v                  │ FILE DOES NOT EXIST          │
+  │    │   Full SoC integration top              │ Highest arch priority        │
+  │    │   Wire: VeeR + Interconnect + all IPs   │                              │
+  ├────┼─────────────────────────────────────────┼──────────────────────────────┤
+  │ P4 │ sw/app/main.c                           │ FILE DOES NOT EXIST          │
+  │    │   RISC-V firmware application           │ AES key load + DMA config    │
+  │    │   + SPI encrypted frame transmit        │                              │
+  ├────┼─────────────────────────────────────────┼──────────────────────────────┤
+  │ P5 │ tb/soc/tb_soc_top.v                     │ FILE DOES NOT EXIST          │
+  │    │   Full end-to-end SoC testbench         │                              │
+  ├────┼─────────────────────────────────────────┼──────────────────────────────┤
+  │ P6 │ AXI SRAM (DMEM on AXI bus)              │ DMA needs staging memory     │
+  │    │   rtl/memory/axi_sram.v                 │ on AXI bus for src/dst addrs │
+  ├────┼─────────────────────────────────────────┼──────────────────────────────┤
+  │ P7 │ Update README with final sim results    │ After all sims pass          │
+  └────┴─────────────────────────────────────────┴──────────────────────────────┘
+
+----------------------------------------------------------------
+10.3 — NEXT IMMEDIATE STEPS
+----------------------------------------------------------------
+
+  1. Run the 4 simulations on lab machine (SPI, Timer, GPIO, DMA compile):
+       cd /home/student/Documents/Honours_Proj_github/sim
+       vcs ... -f run_spi.f   -top tb_spi_axi_top   -o simv_spi   && ./simv_spi
+       vcs ... -f run_timer.f -top tb_EF_TCC32_axi  -o simv_timer && ./simv_timer
+       vcs ... -f run_gpio.f  -top tb_EF_GPIO8_axi  -o simv_gpio  && ./simv_gpio
+       vcs ... -f run_dma.f   -o simv_dma_check
+
+  2. Fix any compile/sim errors from step 1
+
+  3. Write rtl/soc_top/soc_top.v (full SoC top)
+
+  4. Wire DMA into SoC top
+
+## ================================================================

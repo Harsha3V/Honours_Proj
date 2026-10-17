@@ -1,12 +1,26 @@
 // ============================================================
 // run_dma.f
-// VCS filelist — DMA flat wrapper compile (used in full SoC)
+// VCS filelist — DMA flat wrapper compile check (standalone)
 //
 // Usage (from sim/ directory):
-//   +incdir+../rtl/dma/rtl/inc
-//   +incdir+../rtl/dma/rggen-verilog-rtl
-//   -f run_dma.f
+//   vcs -full64 -debug_access+all -kdb -sverilog \
+//       -timescale=1ns/1ps \
+//       +incdir+../rtl/dma/rtl/inc \
+//       +incdir+../rtl/dma/rggen-verilog-rtl \
+//       +incdir+../rtl/dma/bus_arch_sv_pkg \
+//       -f run_dma.f \
+//       -o simv_dma_check
+//
+// Note: This filelist is also -f included by the full SoC sim.
+//       When included, the +incdir flags above must be passed
+//       at the top-level vcs command, not inside this file.
 // ============================================================
+
+// ---- AXI/AHB package (bus_arch_sv_pkg submodule) ----
+// dma_axi_flat_wrapper.sv does: import amba_axi_pkg::*
+// So this MUST be compiled first.
+../rtl/dma/bus_arch_sv_pkg/amba_axi_pkg.sv
+../rtl/dma/bus_arch_sv_pkg/amba_ahb_pkg.sv
 
 // ---- rggen register RTL ----
 ../rtl/dma/rggen-verilog-rtl/rggen_adapter_common.v
